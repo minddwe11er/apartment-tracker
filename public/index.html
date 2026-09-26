@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Квартиры — трекер</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --card-bg: #ffffff;
+    --text: #1f1d1b;
+    --text-muted: #6b6560;
+    --border: #e5e1da;
+    --accent: #b5651d;
+    --accent-soft: #f0e2d3;
+    --status-noted: #9c9691;
+    --status-contacted: #4a7fb5;
+    --status-called: #b58a1d;
+    --status-responded: #3f9d5e;
+    --status-viewing: #7a4ab5;
+    --status-declined: #b5504a;
+    --status-success: #2f8f5b;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1816;
+      --card-bg: #24211e;
+      --text: #ece8e2;
+      --text-muted: #a39d95;
+      --border: #383430;
+      --accent: #e0975a;
+      --accent-soft: #3a2e22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  h1 { font-size: 22px; font-weight: 700; margin: 4px 0; }
+  .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+  .lock-btn { flex-shrink: 0; margin-top: 2px; }
+  .banner {
+    display: none;
+    font-size: 13px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .banner.show { display: block; }
+  .banner.error { border-color: var(--status-declined); color: var(--status-declined); font-weight: 600; }
+
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+  .panel h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 120px; }
+  input, textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 11px;
+    font-size: 16px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  textarea { resize: vertical; min-height: 40px; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 16px;
+    font-family: inherit;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-danger { background: transparent; color: var(--status-declined); }
+
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+  .chip {
+    flex-shrink: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .photo {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: block;
+    background: var(--bg);
+  }
+  .addr-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .addr { font-weight: 700; font-size: 15px; word-break: break-word; }
+  .price-tag { font-size: 17px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+  .meta-line { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .meta-line a { color: var(--accent); text-decoration: none; }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .notes-view { margin-top: 8px; font-size: 13.5px; white-space: pre-wrap; }
+  .card-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .card-controls select { max-width: 230px; }
+  .notes-box { margin-top: 8px; }
+  .notes-box textarea { font-size: 14px; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .updated-at { font-size: 11px; color: var(--text-muted); }
+  .empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 40px 10px; }
+  .readonly .edit-only { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap readonly" id="app">
+  <header>
+    <div>
+      <h1>🏠 Квартиры</h1>
+      <div class="subtitle" id="subtitle">Общий список</div>
+    </div>
+    <button class="btn-ghost lock-btn" id="btnLock">🔒 Войти</button>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <form class="panel" id="loginPanel" style="display:none">
+    <h2>Пароль для редактирования</h2>
+    <div class="row">
+      <input id="inPassword" type="password" autocomplete="current-password" placeholder="Пароль" />
+      <button class="btn-primary" type="submit" style="flex:0">Войти</button>
+    </div>
+  </form>
+
+  <div class="panel edit-only">
+    <h2>Добавить квартиру</h2>
+    <div class="row">
+      <input id="inAddress" placeholder="Адрес / название" autocomplete="off" />
+    </div>
+    <div class="row">
+      <input id="inLink" placeholder="Ссылка на объявление" autocomplete="off" />
+      <input id="inPrice" placeholder="Цена (например 1450)" autocomplete="off" />
+    </div>
+    <div class="row">
+      <textarea id="inNotes" placeholder="Заметка (необязательно)"></textarea>
+    </div>
+    <button class="btn-primary" id="btnAdd">Добавить</button>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div id="list"><div class="empty">Загрузка…</div></div>
+</div>
+
+<script>
+const STATUSES = [
+  { id: "noted",      label: "На рассмотрении", color: "var(--status-noted)" },
+  { id: "contacted",  label: "Написали",        color: "var(--status-contacted)" },
+  { id: "called",     label: "Позвонили",       color: "var(--status-called)" },
+  { id: "responded",  label: "Есть ответ",      color: "var(--status-responded)" },
+  { id: "viewing",    label: "Договорились о просмотре", color: "var(--status-viewing)" },
+  { id: "declined",   label: "Отказ / не подходит", color: "var(--status-declined)" },
+  { id: "success",    label: "Сняли!",          color: "var(--status-success)" },
+];
+const statusMap = Object.fromEntries(STATUSES.map(s => [s.id, s]));
+const POLL_MS = 15000;
+
+const $ = (sel) => document.querySelector(sel);
+const app = $("#app"), listEl = $("#list"), filtersEl = $("#filters"), bannerEl = $("#banner");
+
+let apartments = [];
+let activeFilter = "all";
+let canEdit = false;
+let editingNotes = null; // id картки, де зараз друкують — не перемальовуємо її під час опитування
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+};
+let password = store.get("apt-password") || "";
+
+function showBanner(text, isError = false) {
+  if (!text) { bannerEl.classList.remove("show"); return; }
+  bannerEl.textContent = text;
+  bannerEl.classList.toggle("error", isError);
+  bannerEl.classList.add("show");
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+function safeUrl(u) { return /^(https?:\/\/|\/)/i.test(u || "") ? u : ""; }
+
+async function api(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (password) headers["x-password"] = password;
+  const res = await fetch(path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { setEditMode(false); throw new Error("Неверный пароль — войдите снова"); }
+  if (!res.ok) throw new Error(data.error || `Ошибка ${res.status}`);
+  return data;
+}
+
+function setEditMode(on) {
+  canEdit = on;
+  app.classList.toggle("readonly", !on);
+  $("#btnLock").textContent = on ? "🔓 Выйти" : "🔒 Войти";
+  $("#subtitle").textContent = on ? "Общий список — режим редактирования" : "Общий список — только просмотр";
+  renderList();
+}
+
+async function checkAuth() {
+  try {
+    const r = await api("/api/auth");
+    if (!r.required) { $("#btnLock").style.display = "none"; setEditMode(true); return; }
+    setEditMode(r.ok && !!password);
+  } catch { setEditMode(false); }
+}
+
+$("#btnLock").addEventListener("click", () => {
+  if (canEdit) {
+    password = ""; store.set("apt-password", null); setEditMode(false);
+  } else {
+    const p = $("#loginPanel");
+    p.style.display = p.style.display === "none" ? "block" : "none";
+    $("#inPassword").focus();
+  }
+});
+$("#loginPanel").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  password = $("#inPassword").value;
+  const r = await api("/api/auth").catch(() => ({ ok: false }));
+  if (r.ok) {
+    store.set("apt-password", password);
+    $("#loginPanel").style.display = "none";
+    $("#inPassword").value = "";
+    showBanner("");
+    setEditMode(true);
+  } else {
+    password = "";
+    showBanner("Неверный пароль", true);
+  }
+});
+
+function renderFilters() {
+  const counts = { all: apartments.length };
+  STATUSES.forEach(s => counts[s.id] = apartments.filter(a => a.status === s.id).length);
+  filtersEl.innerHTML = [{ id: "all", label: "Все" }, ...STATUSES].map(c => {
+    const count = counts[c.id] || 0;
+    return `<div class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}">${c.label}${count ? " · " + count : ""}</div>`;
+  }).join("");
+  filtersEl.querySelectorAll(".chip").forEach(chip => chip.addEventListener("click", () => {
+    activeFilter = chip.dataset.filter;
+    renderFilters(); renderList();
+  }));
+}
+
+function renderList() {
+  const items = activeFilter === "all" ? apartments : apartments.filter(a => a.status === activeFilter);
+  if (!items.length) {
+    listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
+    return;
+  }
+  listEl.innerHTML = items.map(a => {
+    const st = statusMap[a.status] || statusMap.noted;
+    const updated = a.updatedAt ? new Date(a.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const link = safeUrl(a.link);
+    const photo = safeUrl(a.photoUrl);
+    return `
+    <div class="card" data-id="${escapeHtml(a.id)}">
+      ${photo ? `<img class="photo" src="${escapeHtml(photo)}" alt="" loading="lazy" />` : ""}
+      <div class="card-top">
+        <div>
+          <div class="addr-row">
+            <span class="addr">${escapeHtml(a.address) || "Без адреса"}</span>
+            ${a.price ? `<span class="price-tag">${escapeHtml(a.price)} CHF</span>` : ""}
+          </div>
+          <div class="meta-line">${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener">ссылка на объявление ↗</a>` : ""}</div>
+        </div>
+        <span class="badge" style="background:${st.color}">${st.label}</span>
+      </div>
+      ${!canEdit && a.notes ? `<div class="notes-view">${escapeHtml(a.notes)}</div>` : ""}
+      <div class="edit-only">
+        <div class="card-controls">
+          <select class="statusSelect" aria-label="Статус">
+            ${STATUSES.map(s => `<option value="${s.id}" ${s.id === a.status ? "selected" : ""}>${s.label}</option>`).join("")}
+          </select>
+          <button class="btn-ghost photoBtn">📷 ${photo ? "Заменить фото" : "Фото"}</button>
+          <input type="file" accept="image/*" class="photoInput" style="display:none" />
+        </div>
+        <div class="notes-box">
+          <textarea class="notesInput" placeholder="Заметка / что ответили">${escapeHtml(a.notes)}</textarea>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="updated-at">${updated ? "обновлено " + updated : ""}</span>
+        <button class="btn-danger deleteBtn edit-only">Удалить</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  listEl.querySelectorAll(".card").forEach(bindCard);
+}
+
+function bindCard(card) {
+  const id = card.dataset.id;
+  const selectEl = card.querySelector(".statusSelect");
+  const notesEl = card.querySelector(".notesInput");
+  const photoBtn = card.querySelector(".photoBtn");
+  const photoInput = card.querySelector(".photoInput");
+  const deleteBtn = card.querySelector(".deleteBtn");
+
+  selectEl.addEventListener("change", () => updateApartment(id, { status: selectEl.value }));
+
+  let timer;
+  notesEl.addEventListener("focus", () => { editingNotes = id; });
+  notesEl.addEventListener("blur", () => { editingNotes = null; });
+  notesEl.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => updateApartment(id, { notes: notesEl.value }, false), 700);
+  });
+
+  photoBtn.addEventListener("click", () => photoInput.click());
+  photoInput.addEventListener("change", async () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) return;
+    photoBtn.disabled = true;
+    photoBtn.textContent = "Загрузка…";
+    try {
+      const blob = await shrinkImage(file);
+      const { url } = await api("/api/photos", { method: "POST", headers: { "content-type": blob.type }, body: blob });
+      await updateApartment(id, { photoUrl: url });
+    } catch (e) {
+      showBanner("Фото не загрузилось: " + e.message, true);
+      photoBtn.disabled = false;
+      photoBtn.textContent = "📷 Фото";
+    }
+  });
+
+  deleteBtn.addEventListener("click", () => {
+    if (deleteBtn.dataset.armed === "1") return deleteApartment(id);
+    deleteBtn.dataset.armed = "1";
+    deleteBtn.textContent = "Точно удалить?";
+    setTimeout(() => { if (deleteBtn.isConnected) { deleteBtn.dataset.armed = "0"; deleteBtn.textContent = "Удалить"; } }, 3000);
+  });
+}
+
+// Зменшуємо фото в браузері (до 1600px, JPEG), щоб не впертися в ліміт функції.
+function shrinkImage(file, max = 1600) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error("не удалось обработать")), "image/jpeg", 0.85);
+    };
+    img.onerror = () => reject(new Error("не удалось прочитать изображение"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function replaceLocal(apt) {
+  const i = apartments.findIndex(a => a.id === apt.id);
+  if (i >= 0) apartments[i] = apt; else apartments.unshift(apt);
+}
+
+async function updateApartment(id, patch, rerender = true) {
+  try {
+    const apt = await api(`/api/apartments/${encodeURIComponent(id)}`, {
+      method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(patch),
+    });
+    replaceLocal(apt);
+    showBanner("");
+    if (rerender) { renderFilters(); renderList(); }
+  } catch (e) {
+    showBanner("Не сохранилось: " + e.message, true);
+    load();
+  }
+}
+
+async function deleteApartment(id) {
+  try {
+    await api(`/api/apartments/${encodeURIComponent(id)}`, { method: "DELETE" });
+    apartments = apartments.filter(a => a.id !== id);
+    renderFilters(); renderList();
+  } catch (e) { showBanner("Не удалилось: " + e.message, true); }
+}
+
+$("#btnAdd").addEventListener("click", async () => {
+  const body = {
+    address: $("#inAddress").value.trim(),
+    link: $("#inLink").value.trim(),
+    price: $("#inPrice").value.trim(),
+    notes: $("#inNotes").value.trim(),
+  };
+  if (!body.address && !body.link) return showBanner("Укажите хотя бы адрес или ссылку на объявление.", true);
+  const btn = $("#btnAdd");
+  btn.disabled = true;
+  try {
+    const apt = await api("/api/apartments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    replaceLocal(apt);
+    ["#inAddress", "#inLink", "#inPrice", "#inNotes"].forEach(s => $(s).value = "");
+    showBanner("");
+    activeFilter = "all";
+    renderFilters(); renderList();
+  } catch (e) { showBanner("Не добавилось: " + e.message, true); }
+  finally { btn.disabled = false; }
+});
+
+async function load() {
+  try {
+    const data = await api("/api/apartments");
+    const changed = JSON.stringify(data) !== JSON.stringify(apartments);
+    apartments = data;
+    if (changed && !editingNotes) { renderFilters(); renderList(); }
+    if (bannerEl.textContent.startsWith("Нет связи")) showBanner("");
+  } catch (e) {
+    showBanner("Нет связи с сервером: " + e.message, true);
+  }
+}
+
+checkAuth().then(load);
+setInterval(() => { if (!document.hidden) load(); }, POLL_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>

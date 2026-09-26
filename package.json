@@ -1,0 +1,14 @@
+{
+  "name": "apartment-tracker",
+  "version": "1.0.0",
+  "description": "Shared apartment tracker on Netlify (Functions + Blobs)",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.1"
+  },
+  "private": true,
+  "type": "module"
+}

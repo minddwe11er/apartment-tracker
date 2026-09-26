@@ -1,0 +1,112 @@
+[
+  {
+    "id": "5kibn6iexnt76e6gsvsv",
+    "address": "Herisauerstrasse 88, 9015 St. Gallen",
+    "createdAt": 1789566355409,
+    "link": "https://flatfox.ch/de/wohnung/herisauerstrasse-88-9015-st-gallen/86345231/",
+    "notes": "Вінкельн.",
+    "price": "540",
+    "status": "declined",
+    "updatedAt": 1789721997192,
+    "photoUrl": "/photos/bfa2e3fc375026f541724dcf9dfb6625.jpg"
+  },
+  {
+    "id": "5lg3nvvo06aqk34znljx",
+    "address": "9000 St. Gallen  Tempelackerstrasse 20",
+    "createdAt": 1789832282448,
+    "link": "https://en.comparis.ch/immobilien/marktplatz/details/show/37947294",
+    "notes": "Возле больницы и Гроссакера.",
+    "price": "689",
+    "status": "contacted",
+    "updatedAt": 1789832296682,
+    "photoUrl": "/photos/c48502ac867ac03b6f61ae33cb0271c1.webp"
+  },
+  {
+    "id": "6p1cn4cz993jncck2d1v",
+    "address": "Waldaustrasse 15, 9000 St.Gallen",
+    "createdAt": 1790345717465,
+    "link": "https://flatfox.ch/en/flat/waldaustrasse-15-9000-stgallen/86283664/",
+    "notes": "Заполнили форму контактов нет.",
+    "price": "850",
+    "status": "contacted",
+    "updatedAt": 1790345828952,
+    "photoUrl": "/photos/4e580d1ba3e135e5307dae6c491b7f0e.jpg"
+  },
+  {
+    "id": "7rp38wokrvo1vz1ezd09",
+    "address": "Burgstrasse 80, 9000 St. Gallen",
+    "createdAt": 1790345769888,
+    "link": "https://flatfox.ch/en/flat/burgstrasse-80-9000-st-gallen/86155798/",
+    "notes": "Без фото, только дом. Заполнили форму контактов нет.",
+    "price": "900",
+    "status": "contacted",
+    "updatedAt": 1790345824522,
+    "photoUrl": "/photos/fe2d44df517eca106d026fc95bea2f01.jpg"
+  },
+  {
+    "id": "9ineeahzzclmkn6chkn3",
+    "address": "9400 Rorschach, Kirchstrasse 70",
+    "createdAt": 1790016483865,
+    "link": "https://en.comparis.ch/immobilien/marktplatz/details/show/37862647",
+    "notes": "",
+    "price": "680",
+    "status": "contacted",
+    "updatedAt": 1790016491167,
+    "photoUrl": "/photos/9f073db88f82279a5d4a0e0b76fcf788.webp"
+  },
+  {
+    "id": "cfcklb3v5nres57r2fen",
+    "address": "Lindenstr. 21, 9000 St. Gallen",
+    "createdAt": 1790345422137,
+    "link": "https://flatfox.ch/en/flat/lindenstr-21-9000-st-gallen/86287578/",
+    "notes": "Возле Кантоншпиталя\nПросмотр 5 октября с 10:00 - 18:00",
+    "price": "990",
+    "status": "responded",
+    "updatedAt": 1790359188467,
+    "photoUrl": "/photos/88dfaa93253a608ef051ccad021b4d53.jpg"
+  },
+  {
+    "id": "isj3l4ygnvgsnuj8ftgk",
+    "address": "Bruggwaldstrasse 10, 9008 St. Gallen",
+    "createdAt": 1790345648046,
+    "link": "https://www.newhome.ch/en/renting/properties/apartment/apartment/city-st-gallen/2.5-room/detail/6033931?location=1;3206&offerType=2&priceMax=1000&propertyType=100&roomsMin=2&roomsMax=8.5&skipCount=0&utm_source=chatgpt.com",
+    "notes": "Возле Штокена",
+    "price": "1000",
+    "status": "contacted",
+    "updatedAt": 1790345656163,
+    "photoUrl": "/photos/4483ce6cbc023dd7a34bd4dba202272d.jpg"
+  },
+  {
+    "id": "m4wo0fv1xfr24ds4nyya",
+    "address": "9000 St. Gallen, Schwertgasse 5",
+    "createdAt": 1789561194352,
+    "link": "https://en.comparis.ch/immobilien/marktplatz/details/show/37987268",
+    "notes": "Возле Клавы.",
+    "price": "700",
+    "status": "contacted",
+    "updatedAt": 1789561274963,
+    "photoUrl": "/photos/9b40be866e47c3d67c7247dc292f909c.webp"
+  },
+  {
+    "id": "phc0xcmncb025c9ftnxg",
+    "address": "9000 St. Gallen, Lämmlisbrunnenstrasse 44",
+    "createdAt": 1789560583410,
+    "link": "https://en.comparis.ch/immobilien/marktplatz/details/show/37977760",
+    "notes": "",
+    "price": "620",
+    "status": "contacted",
+    "updatedAt": 1789723008447,
+    "photoUrl": "/photos/19fd472a7bb6affb7a0b0eac0c346715.webp"
+  },
+  {
+    "id": "q47nzg9ptny7rxqo5inf",
+    "address": "9300 Wittenbach, Zinslibüelstrasse 17",
+    "createdAt": 1789566431287,
+    "link": "https://en.comparis.ch/immobilien/marktplatz/details/show/37713866",
+    "notes": "За СГ, Витенбах, большая студия.",
+    "price": "690",
+    "status": "contacted",
+    "updatedAt": 1789568697792,
+    "photoUrl": "/photos/e4b74e6877e4b91d46dd81f1b33f7f6b.webp"
+  }
+]
