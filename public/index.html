@@ -99,19 +99,37 @@
   .btn-ghost:hover { color: var(--text); }
   .btn-danger { background: transparent; color: var(--status-declined); }
 
-  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
   .chip {
-    flex-shrink: 0;
+    --c: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 6px 12px;
+    color: var(--text);
+    padding: 5px 6px 5px 11px;
     border-radius: 999px;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
+    line-height: 1.2;
+    transition: background .15s, border-color .15s, color .15s;
   }
-  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chip:hover { border-color: var(--c); }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+  .chip .count {
+    min-width: 22px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .chip.active { background: var(--c); border-color: var(--c); color: #fff; }
+  .chip.active .dot { background: #fff; }
+  .chip.active .count { background: rgba(255,255,255,.25); color: #fff; }
 
   .card {
     background: var(--card-bg);
@@ -298,10 +316,13 @@ $("#loginPanel").addEventListener("submit", async (e) => {
 function renderFilters() {
   const counts = { all: apartments.length };
   STATUSES.forEach(s => counts[s.id] = apartments.filter(a => a.status === s.id).length);
-  filtersEl.innerHTML = [{ id: "all", label: "Все" }, ...STATUSES].map(c => {
-    const count = counts[c.id] || 0;
-    return `<div class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}">${c.label}${count ? " · " + count : ""}</div>`;
-  }).join("");
+  // Порожні статуси не показуємо, щоб список був коротким (крім активного).
+  const chips = [{ id: "all", label: "Все", color: "var(--accent)" }, ...STATUSES]
+    .filter(c => c.id === "all" || counts[c.id] || c.id === activeFilter);
+  filtersEl.innerHTML = chips.map(c => `
+    <button type="button" class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}" style="--c:${c.color}" aria-pressed="${activeFilter === c.id}">
+      ${c.id === "all" ? "" : `<span class="dot"></span>`}${c.label}<span class="count">${counts[c.id] || 0}</span>
+    </button>`).join("");
   filtersEl.querySelectorAll(".chip").forEach(chip => chip.addEventListener("click", () => {
     activeFilter = chip.dataset.filter;
     renderFilters(); renderList();
