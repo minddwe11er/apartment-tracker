@@ -167,6 +167,19 @@
     padding: 14px 16px;
     margin-bottom: 10px;
   }
+  .card.approved {
+    border: 2px solid var(--status-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-success) 18%, transparent), var(--shadow);
+  }
+  .approved-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-bottom: 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--status-success); color: #fff;
+    font-size: 12px; font-weight: 700;
+  }
+  .approveBtn.on { background: var(--status-success); border-color: var(--status-success); color: #fff; }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .gallery {
     position: relative;
@@ -403,14 +416,14 @@ $("#loginPanel").addEventListener("submit", async (e) => {
 });
 
 function renderFilters() {
-  const counts = { all: apartments.length };
+  const counts = { all: apartments.length, approved: apartments.filter(a => a.approved).length };
   STATUSES.forEach(s => counts[s.id] = apartments.filter(a => a.status === s.id).length);
   // Порожні статуси не показуємо, щоб список був коротким (крім активного).
-  const chips = [{ id: "all", label: "Все", color: "var(--accent)" }, ...STATUSES]
+  const chips = [{ id: "all", label: "Все", color: "var(--accent)" }, { id: "approved", label: "★ Подходят", color: "var(--status-success)" }, ...STATUSES]
     .filter(c => c.id === "all" || counts[c.id] || c.id === activeFilter);
   filtersEl.innerHTML = chips.map(c => `
     <button type="button" class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}" style="--c:${c.color}" aria-pressed="${activeFilter === c.id}">
-      ${c.id === "all" ? "" : `<span class="dot"></span>`}${c.label}<span class="count">${counts[c.id] || 0}</span>
+      ${c.id === "all" || c.id === "approved" ? "" : `<span class="dot"></span>`}${c.label}<span class="count">${counts[c.id] || 0}</span>
     </button>`).join("");
   filtersEl.querySelectorAll(".chip").forEach(chip => chip.addEventListener("click", () => {
     activeFilter = chip.dataset.filter;
@@ -419,7 +432,10 @@ function renderFilters() {
 }
 
 function renderList() {
-  const items = activeFilter === "all" ? apartments : apartments.filter(a => a.status === activeFilter);
+  const items = (activeFilter === "all" ? apartments
+    : activeFilter === "approved" ? apartments.filter(a => a.approved)
+    : apartments.filter(a => a.status === activeFilter))
+    .slice().sort((a, b) => (b.approved ? 1 : 0) - (a.approved ? 1 : 0)); // обрані — зверху
   if (!items.length) {
     listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
     return;
@@ -435,7 +451,7 @@ function renderList() {
     try { site = link ? new URL(link, location.href).hostname.replace(/^(www|en|de|fr|it)\./, "") : ""; } catch {}
     const addrText = escapeHtml(a.address) || (site ? "Объявление на " + escapeHtml(site) : "Без адреса");
     return `
-    <div class="card" data-id="${escapeHtml(a.id)}">
+    <div class="card ${a.approved ? "approved" : ""}" data-id="${escapeHtml(a.id)}">
       ${photos.length ? `
       <div class="gallery">
         ${ext(`<img class="photo" src="${escapeHtml(photos[idx])}" alt="" loading="lazy" draggable="false" />`, "photo-link")}
@@ -444,6 +460,7 @@ function renderList() {
         <button type="button" class="nav next" aria-label="Следующее фото"><span>›</span></button>
         <div class="dots">${photos.map((_, i) => `<i class="${i === idx ? "on" : ""}"></i>`).join("")}</div>` : ""}
       </div>` : ""}
+      ${a.approved ? `<div class="approved-tag">★ Подходит — занимаемся</div>` : ""}
       <div class="card-top">
         <div>
           <div class="addr-row">
@@ -460,6 +477,7 @@ function renderList() {
           <select class="statusSelect" aria-label="Статус">
             ${STATUSES.map(s => `<option value="${s.id}" ${s.id === a.status ? "selected" : ""}>${s.label}</option>`).join("")}
           </select>
+          <button class="btn-ghost approveBtn ${a.approved ? "on" : ""}" aria-pressed="${!!a.approved}">${a.approved ? "★ Подходит" : "☆ Подходит"}</button>
           <button class="btn-ghost photoBtn">📷 Добавить фото</button>
           ${photos.length ? `<button class="btn-danger removePhotoBtn">Удалить это фото</button>` : ""}
           <input type="file" accept="image/*" multiple class="photoInput" style="display:none" />
@@ -497,6 +515,13 @@ function bindCard(card) {
   });
 
   bindGallery(card, id);
+
+  const approveBtn = card.querySelector(".approveBtn");
+  approveBtn.addEventListener("click", () => {
+    const cur = apartments.find(a => a.id === id);
+    approveBtn.disabled = true;
+    updateApartment(id, { approved: !cur?.approved });
+  });
 
   photoBtn.addEventListener("click", () => photoInput.click());
   photoInput.addEventListener("change", async () => {

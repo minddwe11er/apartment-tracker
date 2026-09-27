@@ -24,6 +24,7 @@ function clean(input) {
     if (typeof input?.[k] === "string") out[k] = input[k].slice(0, 5000);
   }
   if (out.status && !STATUSES.includes(out.status)) delete out.status;
+  if (typeof input?.approved === "boolean") out.approved = input.approved;
   // Кілька фото: масив шляхів. Старе поле photoUrl теж приймаємо.
   let photos = Array.isArray(input?.photos) ? input.photos : typeof input?.photoUrl === "string" ? [input.photoUrl] : null;
   if (photos) out.photos = photos.filter(isPhotoPath).slice(0, MAX_PHOTOS);
