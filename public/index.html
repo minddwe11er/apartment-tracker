@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Квартиры — трекер</title>
+<script>
+  // Ставимо тему до відмальовки, щоб не блимало.
+  try { const t = localStorage.getItem("apt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
 <style>
   :root {
@@ -24,8 +28,11 @@
     --radius: 14px;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05);
   }
+  :root { color-scheme: light; }
+  /* Тема: data-theme="light" | "dark" на <html>; без атрибута — як у системі. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
       --bg: #1a1816;
       --card-bg: #24211e;
       --text: #ece8e2;
@@ -34,6 +41,16 @@
       --accent: #e0975a;
       --accent-soft: #3a2e22;
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #1a1816;
+    --card-bg: #24211e;
+    --text: #ece8e2;
+    --text-muted: #a39d95;
+    --border: #383430;
+    --accent: #e0975a;
+    --accent-soft: #3a2e22;
   }
   * { box-sizing: border-box; }
   body {
@@ -48,7 +65,8 @@
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   h1 { font-size: 22px; font-weight: 700; margin: 4px 0; }
   .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
-  .lock-btn { flex-shrink: 0; margin-top: 2px; }
+  .header-actions { display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+  .theme-btn { padding: 9px 11px; font-size: 16px; line-height: 1; }
   .banner {
     display: none;
     font-size: 13px;
@@ -243,7 +261,10 @@
       <h1>🏠 Квартиры</h1>
       <div class="subtitle" id="subtitle">Общий список</div>
     </div>
-    <button class="btn-ghost lock-btn" id="btnLock" style="visibility:hidden">🔒 Войти</button>
+    <div class="header-actions">
+      <button type="button" class="btn-ghost theme-btn" id="btnTheme" aria-label="Тема" title="Тема">🌓</button>
+      <button class="btn-ghost lock-btn" id="btnLock" style="visibility:hidden">🔒 Войти</button>
+    </div>
   </header>
 
   <div class="banner" id="banner"></div>
@@ -673,6 +694,27 @@ async function load() {
     showBanner("Нет связи с сервером: " + e.message, true);
   }
 }
+
+// Перемикач теми: як у системі → світла → темна → …
+const THEMES = [
+  { id: "auto",  icon: "🌓", label: "Тема: как в системе" },
+  { id: "light", icon: "☀️", label: "Тема: светлая" },
+  { id: "dark",  icon: "🌙", label: "Тема: тёмная" },
+];
+function applyTheme(id) {
+  const t = THEMES.find(x => x.id === id) || THEMES[0];
+  if (t.id === "auto") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t.id;
+  const btn = $("#btnTheme");
+  btn.textContent = t.icon;
+  btn.title = btn.ariaLabel = t.label;
+  store.set("apt-theme", t.id === "auto" ? null : t.id);
+}
+applyTheme(store.get("apt-theme") || "auto");
+$("#btnTheme").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || "auto";
+  applyTheme(THEMES[(THEMES.findIndex(t => t.id === cur) + 1) % THEMES.length].id);
+});
 
 checkAuth().then(load);
 setInterval(() => { if (!document.hidden) load(); }, POLL_MS);
