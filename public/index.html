@@ -98,6 +98,8 @@
   .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
   .btn-ghost:hover { color: var(--text); }
   .btn-danger { background: transparent; color: var(--status-declined); }
+  .add-photo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .add-photo img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); }
 
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
   .chip {
@@ -204,6 +206,12 @@
     </div>
     <div class="row">
       <textarea id="inNotes" placeholder="Заметка (необязательно)"></textarea>
+    </div>
+    <div class="add-photo" id="addPhoto">
+      <img id="addPhotoPreview" alt="" hidden />
+      <button type="button" class="btn-ghost" id="btnAddPhoto">📷 Добавить фото</button>
+      <button type="button" class="btn-danger" id="btnRemoveAddPhoto" hidden>Убрать</button>
+      <input type="file" accept="image/*" id="inPhoto" hidden />
     </div>
     <button class="btn-primary" id="btnAdd">Добавить</button>
   </div>
@@ -464,6 +472,22 @@ async function deleteApartment(id) {
   } catch (e) { showBanner("Не удалилось: " + e.message, true); }
 }
 
+let pendingPhoto = null; // файл, вибраний у формі додавання
+
+function setPendingPhoto(file) {
+  pendingPhoto = file || null;
+  const img = $("#addPhotoPreview");
+  if (img.src) URL.revokeObjectURL(img.src);
+  if (pendingPhoto) img.src = URL.createObjectURL(pendingPhoto); else img.removeAttribute("src");
+  img.hidden = !pendingPhoto;
+  $("#btnRemoveAddPhoto").hidden = !pendingPhoto;
+  $("#btnAddPhoto").textContent = pendingPhoto ? "📷 Другое фото" : "📷 Добавить фото";
+  $("#inPhoto").value = "";
+}
+$("#btnAddPhoto").addEventListener("click", () => $("#inPhoto").click());
+$("#inPhoto").addEventListener("change", () => setPendingPhoto($("#inPhoto").files[0]));
+$("#btnRemoveAddPhoto").addEventListener("click", () => setPendingPhoto(null));
+
 $("#btnAdd").addEventListener("click", async () => {
   const body = {
     address: $("#inAddress").value.trim(),
@@ -475,14 +499,22 @@ $("#btnAdd").addEventListener("click", async () => {
   const btn = $("#btnAdd");
   btn.disabled = true;
   try {
+    if (pendingPhoto) {
+      btn.textContent = "Загружаем фото…";
+      const blob = await shrinkImage(pendingPhoto);
+      const { url } = await api("/api/photos", { method: "POST", headers: { "content-type": blob.type }, body: blob });
+      body.photoUrl = url;
+    }
+    btn.textContent = "Сохраняем…";
     const apt = await api("/api/apartments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     replaceLocal(apt);
     ["#inAddress", "#inLink", "#inPrice", "#inNotes"].forEach(s => $(s).value = "");
+    setPendingPhoto(null);
     showBanner("");
     activeFilter = "all";
     renderFilters(); renderList();
   } catch (e) { showBanner("Не добавилось: " + e.message, true); }
-  finally { btn.disabled = false; }
+  finally { btn.disabled = false; btn.textContent = "Добавить"; }
 });
 
 async function load() {
