@@ -98,8 +98,16 @@
   .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
   .btn-ghost:hover { color: var(--text); }
   .btn-danger { background: transparent; color: var(--status-declined); }
-  .add-photo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .add-photo img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); }
+  .add-photo { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .thumb { position: relative; width: 64px; height: 64px; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .thumb button {
+    position: absolute; top: -6px; right: -6px;
+    width: 22px; height: 22px; padding: 0;
+    border-radius: 50%;
+    background: var(--status-declined); color: #fff;
+    font-size: 13px; line-height: 22px;
+  }
 
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
   .chip {
@@ -142,15 +150,64 @@
     margin-bottom: 10px;
   }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .gallery {
+    position: relative;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg);
+    touch-action: pan-y;
+    user-select: none;
+  }
   .photo {
     width: 100%;
-    max-height: 200px;
+    height: 220px;
     object-fit: cover;
-    border-radius: 10px;
-    margin-bottom: 10px;
     display: block;
-    background: var(--bg);
   }
+  .gallery .nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30%;
+    padding: 0 10px;
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    color: #fff;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .gallery .nav.prev { left: 0; justify-content: flex-start; }
+  .gallery .nav.next { right: 0; justify-content: flex-end; }
+  .gallery .nav span {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.45);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    line-height: 1;
+    padding-bottom: 2px;
+    opacity: .75;
+    transition: opacity .15s, background .15s;
+  }
+  .gallery .nav:hover span, .gallery .nav:focus-visible span { opacity: 1; background: rgba(0,0,0,.65); }
+  .gallery .dots {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.35);
+    pointer-events: none;
+  }
+  .gallery .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.5); }
+  .gallery .dots i.on { background: #fff; }
   .addr-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .addr { font-weight: 700; font-size: 15px; word-break: break-word; }
   .price-tag { font-size: 17px; font-weight: 800; color: var(--accent); white-space: nowrap; }
@@ -212,10 +269,9 @@
       <textarea id="inNotes" placeholder="Заметка (необязательно)"></textarea>
     </div>
     <div class="add-photo" id="addPhoto">
-      <img id="addPhotoPreview" alt="" hidden />
+      <div id="addThumbs" style="display:contents"></div>
       <button type="button" class="btn-ghost" id="btnAddPhoto">📷 Добавить фото</button>
-      <button type="button" class="btn-danger" id="btnRemoveAddPhoto" hidden>Убрать</button>
-      <input type="file" accept="image/*" id="inPhoto" hidden />
+      <input type="file" accept="image/*" multiple id="inPhoto" hidden />
     </div>
     <button class="btn-primary" id="btnAdd">Добавить</button>
   </div>
@@ -351,14 +407,22 @@ function renderList() {
     const st = statusMap[a.status] || statusMap.noted;
     const updated = a.updatedAt ? new Date(a.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
     const link = safeUrl(a.link);
-    const photo = safeUrl(a.photoUrl);
-    const ext = (inner, cls = "") => link ? `<a class="${cls}" href="${escapeHtml(link)}" target="_blank" rel="noopener">${inner}</a>` : inner;
+    const photos = photosOf(a);
+    const idx = Math.min(galleryIndex.get(a.id) || 0, Math.max(photos.length - 1, 0));
+    const ext =(inner, cls = "") => link ? `<a class="${cls}" href="${escapeHtml(link)}" target="_blank" rel="noopener">${inner}</a>` : inner;
     let site = "";
     try { site = link ? new URL(link, location.href).hostname.replace(/^(www|en|de|fr|it)\./, "") : ""; } catch {}
     const addrText = escapeHtml(a.address) || (site ? "Объявление на " + escapeHtml(site) : "Без адреса");
     return `
     <div class="card" data-id="${escapeHtml(a.id)}">
-      ${photo ? ext(`<img class="photo" src="${escapeHtml(photo)}" alt="" loading="lazy" />`, "photo-link") : ""}
+      ${photos.length ? `
+      <div class="gallery">
+        ${ext(`<img class="photo" src="${escapeHtml(photos[idx])}" alt="" loading="lazy" draggable="false" />`, "photo-link")}
+        ${photos.length > 1 ? `
+        <button type="button" class="nav prev" aria-label="Предыдущее фото"><span>‹</span></button>
+        <button type="button" class="nav next" aria-label="Следующее фото"><span>›</span></button>
+        <div class="dots">${photos.map((_, i) => `<i class="${i === idx ? "on" : ""}"></i>`).join("")}</div>` : ""}
+      </div>` : ""}
       <div class="card-top">
         <div>
           <div class="addr-row">
@@ -375,8 +439,9 @@ function renderList() {
           <select class="statusSelect" aria-label="Статус">
             ${STATUSES.map(s => `<option value="${s.id}" ${s.id === a.status ? "selected" : ""}>${s.label}</option>`).join("")}
           </select>
-          <button class="btn-ghost photoBtn">📷 ${photo ? "Заменить фото" : "Фото"}</button>
-          <input type="file" accept="image/*" class="photoInput" style="display:none" />
+          <button class="btn-ghost photoBtn">📷 Добавить фото</button>
+          ${photos.length ? `<button class="btn-danger removePhotoBtn">Удалить это фото</button>` : ""}
+          <input type="file" accept="image/*" multiple class="photoInput" style="display:none" />
         </div>
         <div class="notes-box">
           <textarea class="notesInput" placeholder="Заметка / что ответили">${escapeHtml(a.notes)}</textarea>
@@ -410,21 +475,37 @@ function bindCard(card) {
     timer = setTimeout(() => updateApartment(id, { notes: notesEl.value }, false), 700);
   });
 
+  bindGallery(card, id);
+
   photoBtn.addEventListener("click", () => photoInput.click());
   photoInput.addEventListener("change", async () => {
-    const file = photoInput.files && photoInput.files[0];
-    if (!file) return;
+    const files = [...(photoInput.files || [])];
+    if (!files.length) return;
     photoBtn.disabled = true;
-    photoBtn.textContent = "Загрузка…";
     try {
-      const blob = await shrinkImage(file);
-      const { url } = await api("/api/photos", { method: "POST", headers: { "content-type": blob.type }, body: blob });
-      await updateApartment(id, { photoUrl: url });
+      const urls = await uploadPhotos(files, (i, n) => photoBtn.textContent = `Загрузка ${i}/${n}…`);
+      const current = photosOf(apartments.find(a => a.id === id));
+      galleryIndex.set(id, current.length); // показати перше з нових
+      await updateApartment(id, { photos: [...current, ...urls] });
     } catch (e) {
       showBanner("Фото не загрузилось: " + e.message, true);
       photoBtn.disabled = false;
-      photoBtn.textContent = "📷 Фото";
+      photoBtn.textContent = "📷 Добавить фото";
     }
+  });
+
+  const removeBtn = card.querySelector(".removePhotoBtn");
+  if (removeBtn) removeBtn.addEventListener("click", () => {
+    if (removeBtn.dataset.armed !== "1") {
+      removeBtn.dataset.armed = "1";
+      removeBtn.textContent = "Точно удалить фото?";
+      setTimeout(() => { if (removeBtn.isConnected) { removeBtn.dataset.armed = "0"; removeBtn.textContent = "Удалить это фото"; } }, 3000);
+      return;
+    }
+    const current = photosOf(apartments.find(a => a.id === id));
+    const i = Math.min(galleryIndex.get(id) || 0, current.length - 1);
+    galleryIndex.set(id, Math.max(0, i - 1));
+    updateApartment(id, { photos: current.filter((_, k) => k !== i) });
   });
 
   deleteBtn.addEventListener("click", () => {
@@ -433,6 +514,60 @@ function bindCard(card) {
     deleteBtn.textContent = "Точно удалить?";
     setTimeout(() => { if (deleteBtn.isConnected) { deleteBtn.dataset.armed = "0"; deleteBtn.textContent = "Удалить"; } }, 3000);
   });
+}
+
+const galleryIndex = new Map(); // id квартири → номер показаного фото (переживає перемальовування)
+
+function photosOf(a) {
+  if (!a) return [];
+  const list = Array.isArray(a.photos) ? a.photos : a.photoUrl ? [a.photoUrl] : [];
+  return list.map(safeUrl).filter(Boolean);
+}
+
+// Гортання: ліва/права третина фото, стрілки клавіатури, свайп.
+function bindGallery(card, id) {
+  const g = card.querySelector(".gallery");
+  const photos = photosOf(apartments.find(a => a.id === id));
+  if (!g || photos.length < 2) return;
+  const img = g.querySelector(".photo");
+  const dots = [...g.querySelectorAll(".dots i")];
+
+  const show = (i) => {
+    const n = photos.length;
+    const next = ((i % n) + n) % n;
+    galleryIndex.set(id, next);
+    img.src = photos[next];
+    dots.forEach((d, k) => d.classList.toggle("on", k === next));
+  };
+  const step = (d) => show((galleryIndex.get(id) || 0) + d);
+
+  g.querySelector(".prev").addEventListener("click", (e) => { e.preventDefault(); step(-1); });
+  g.querySelector(".next").addEventListener("click", (e) => { e.preventDefault(); step(1); });
+
+  let x0 = null, y0 = null, swiped = false;
+  g.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; swiped = false; }, { passive: true });
+  g.addEventListener("touchend", (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { swiped = true; step(dx < 0 ? 1 : -1); }
+    x0 = null;
+  });
+  // Після свайпу не відкриваємо оголошення випадковим «кліком».
+  g.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); swiped = false; } }, true);
+
+  // Підвантажуємо сусідні фото, щоб гортання було без затримки.
+  photos.forEach(src => { const i = new Image(); i.src = src; });
+}
+
+async function uploadPhotos(files, onProgress) {
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    onProgress?.(i + 1, files.length);
+    const blob = await shrinkImage(files[i]);
+    const { url } = await api("/api/photos", { method: "POST", headers: { "content-type": blob.type }, body: blob });
+    urls.push(url);
+  }
+  return urls;
 }
 
 // Зменшуємо фото в браузері (до 1600px, JPEG), щоб не впертися в ліміт функції.
@@ -480,21 +615,25 @@ async function deleteApartment(id) {
   } catch (e) { showBanner("Не удалилось: " + e.message, true); }
 }
 
-let pendingPhoto = null; // файл, вибраний у формі додавання
+let pendingPhotos = []; // файли, вибрані у формі додавання
 
-function setPendingPhoto(file) {
-  pendingPhoto = file || null;
-  const img = $("#addPhotoPreview");
-  if (img.src) URL.revokeObjectURL(img.src);
-  if (pendingPhoto) img.src = URL.createObjectURL(pendingPhoto); else img.removeAttribute("src");
-  img.hidden = !pendingPhoto;
-  $("#btnRemoveAddPhoto").hidden = !pendingPhoto;
-  $("#btnAddPhoto").textContent = pendingPhoto ? "📷 Другое фото" : "📷 Добавить фото";
+function renderPendingPhotos() {
+  const box = $("#addThumbs");
+  box.querySelectorAll("img").forEach(i => URL.revokeObjectURL(i.src));
+  box.innerHTML = pendingPhotos.map((f, i) => `
+    <div class="thumb"><img src="${URL.createObjectURL(f)}" alt="" /><button type="button" data-i="${i}" aria-label="Убрать фото">×</button></div>`).join("");
+  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    pendingPhotos.splice(+b.dataset.i, 1);
+    renderPendingPhotos();
+  }));
+  $("#btnAddPhoto").textContent = pendingPhotos.length ? "📷 Ещё фото" : "📷 Добавить фото";
   $("#inPhoto").value = "";
 }
 $("#btnAddPhoto").addEventListener("click", () => $("#inPhoto").click());
-$("#inPhoto").addEventListener("change", () => setPendingPhoto($("#inPhoto").files[0]));
-$("#btnRemoveAddPhoto").addEventListener("click", () => setPendingPhoto(null));
+$("#inPhoto").addEventListener("change", () => {
+  pendingPhotos.push(...$("#inPhoto").files);
+  renderPendingPhotos();
+});
 
 $("#btnAdd").addEventListener("click", async () => {
   const body = {
@@ -507,17 +646,15 @@ $("#btnAdd").addEventListener("click", async () => {
   const btn = $("#btnAdd");
   btn.disabled = true;
   try {
-    if (pendingPhoto) {
-      btn.textContent = "Загружаем фото…";
-      const blob = await shrinkImage(pendingPhoto);
-      const { url } = await api("/api/photos", { method: "POST", headers: { "content-type": blob.type }, body: blob });
-      body.photoUrl = url;
+    if (pendingPhotos.length) {
+      body.photos = await uploadPhotos(pendingPhotos, (i, n) => btn.textContent = `Загружаем фото ${i}/${n}…`);
     }
     btn.textContent = "Сохраняем…";
     const apt = await api("/api/apartments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     replaceLocal(apt);
     ["#inAddress", "#inLink", "#inPrice", "#inNotes"].forEach(s => $(s).value = "");
-    setPendingPhoto(null);
+    pendingPhotos = [];
+    renderPendingPhotos();
     showBanner("");
     activeFilter = "all";
     renderFilters(); renderList();

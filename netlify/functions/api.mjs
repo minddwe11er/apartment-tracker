@@ -3,7 +3,8 @@ import seed from "./seed.json" with { type: "json" };
 
 // Дані: одна квартира = один blob "apt/<id>". Фото = blob "photo/<id>".
 const STATUSES = ["noted", "contacted", "called", "responded", "viewing", "declined", "success"];
-const FIELDS = ["address", "link", "price", "notes", "status", "photoUrl"];
+const FIELDS = ["address", "link", "price", "notes", "status"];
+const MAX_PHOTOS = 20;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 
 const store = () => getStore({ name: "apartments", consistency: "strong" });
@@ -23,7 +24,25 @@ function clean(input) {
     if (typeof input?.[k] === "string") out[k] = input[k].slice(0, 5000);
   }
   if (out.status && !STATUSES.includes(out.status)) delete out.status;
+  // Кілька фото: масив шляхів. Старе поле photoUrl теж приймаємо.
+  let photos = Array.isArray(input?.photos) ? input.photos : typeof input?.photoUrl === "string" ? [input.photoUrl] : null;
+  if (photos) out.photos = photos.filter(isPhotoPath).slice(0, MAX_PHOTOS);
   return out;
+}
+
+const isPhotoPath = (p) => typeof p === "string" && /^\/(api\/photos|photos)\/[\w.-]+$/.test(p);
+
+// Старі записи мають photoUrl — перетворюємо на масив photos.
+function normalize(apt) {
+  if (!apt) return apt;
+  const { photoUrl, ...rest } = apt;
+  return { ...rest, photos: Array.isArray(apt.photos) ? apt.photos : photoUrl ? [photoUrl] : [] };
+}
+
+const blobKey = (p) => (p.startsWith("/api/photos/") ? `photo/${p.split("/").pop()}` : null);
+
+async function deletePhotos(s, paths) {
+  await Promise.all(paths.map(blobKey).filter(Boolean).map((k) => s.delete(k)));
 }
 
 // Редагування захищене паролем, якщо в Netlify задано змінну APP_PASSWORD.
@@ -47,7 +66,7 @@ async function listApartments(s) {
   await ensureSeeded(s);
   const { blobs } = await s.list({ prefix: "apt/" });
   const items = await Promise.all(blobs.map((b) => s.get(b.key, { type: "json" })));
-  return items.filter(Boolean).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return items.filter(Boolean).map(normalize).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 export default async (req) => {
@@ -71,25 +90,25 @@ export default async (req) => {
         const body = clean(await req.json());
         if (!body.address && !body.link) return json({ error: "Нужен адрес или ссылка" }, 400);
         const now = Date.now();
-        const apt = { address: "", link: "", price: "", notes: "", photoUrl: "", status: "noted", ...body, id: newId(), createdAt: now, updatedAt: now };
+        const apt = { address: "", link: "", price: "", notes: "", photos: [], status: "noted", ...body, id: newId(), createdAt: now, updatedAt: now };
         await s.setJSON(`apt/${apt.id}`, apt);
         return json(apt, 201);
       }
 
       if (method === "PATCH" && id) {
-        const current = await s.get(`apt/${id}`, { type: "json" });
+        const current = normalize(await s.get(`apt/${id}`, { type: "json" }));
         if (!current) return json({ error: "Не найдено" }, 404);
         const updated = { ...current, ...clean(await req.json()), id, updatedAt: Date.now() };
         await s.setJSON(`apt/${id}`, updated);
+        // Прибираємо з Blobs фото, які прибрали з квартири.
+        await deletePhotos(s, current.photos.filter((p) => !updated.photos.includes(p)));
         return json(updated);
       }
 
       if (method === "DELETE" && id) {
-        const current = await s.get(`apt/${id}`, { type: "json" });
+        const current = normalize(await s.get(`apt/${id}`, { type: "json" }));
         await s.delete(`apt/${id}`);
-        if (current?.photoUrl?.startsWith("/api/photos/")) {
-          await s.delete(`photo/${current.photoUrl.split("/").pop()}`);
-        }
+        if (current) await deletePhotos(s, current.photos);
         return json({ ok: true });
       }
     }
