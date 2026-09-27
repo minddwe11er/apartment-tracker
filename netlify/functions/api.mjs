@@ -27,8 +27,11 @@ function clean(input) {
 }
 
 // Редагування захищене паролем, якщо в Netlify задано змінну APP_PASSWORD.
+const getPassword = () =>
+  (globalThis.Netlify?.env?.get("APP_PASSWORD") ?? process.env.APP_PASSWORD ?? "").trim();
+
 function canWrite(req) {
-  const pw = process.env.APP_PASSWORD;
+  const pw = getPassword();
   if (!pw) return true;
   return req.headers.get("x-password") === pw;
 }
@@ -56,7 +59,7 @@ export default async (req) => {
 
   try {
     if (resource === "auth" && method === "GET") {
-      return json({ required: !!process.env.APP_PASSWORD, ok: canWrite(req) });
+      return json({ required: !!getPassword(), ok: canWrite(req) });
     }
 
     if (resource === "apartments") {

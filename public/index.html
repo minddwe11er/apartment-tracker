@@ -162,7 +162,7 @@
       <h1>🏠 Квартиры</h1>
       <div class="subtitle" id="subtitle">Общий список</div>
     </div>
-    <button class="btn-ghost lock-btn" id="btnLock">🔒 Войти</button>
+    <button class="btn-ghost lock-btn" id="btnLock" style="visibility:hidden">🔒 Войти</button>
   </header>
 
   <div class="banner" id="banner"></div>
@@ -256,9 +256,18 @@ function setEditMode(on) {
 async function checkAuth() {
   try {
     const r = await api("/api/auth");
-    if (!r.required) { $("#btnLock").style.display = "none"; setEditMode(true); return; }
+    if (!r.required) {
+      $("#btnLock").style.display = "none";
+      setEditMode(true);
+      showBanner("⚠️ Пароль не настроен: сервер не видит переменную APP_PASSWORD, поэтому редактировать может любой. Проверьте переменную в Netlify и сделайте новый деплой.", true);
+      return;
+    }
+    $("#btnLock").style.visibility = "visible";
     setEditMode(r.ok && !!password);
-  } catch { setEditMode(false); }
+  } catch {
+    $("#btnLock").style.visibility = "visible";
+    setEditMode(false);
+  }
 }
 
 $("#btnLock").addEventListener("click", () => {
