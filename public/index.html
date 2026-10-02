@@ -254,7 +254,45 @@
   .addr-link .addr { text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; text-decoration-thickness: 2px; transition: text-decoration-color .15s, color .15s; }
   .addr-link:hover .addr { color: var(--accent); text-decoration-color: var(--accent); }
   .addr-link .ext { margin-left: 4px; font-size: 13px; color: var(--accent); font-weight: 700; }
-  .photo-link { display: block; }
+  .gallery .photo { cursor: zoom-in; }
+
+  /* Перегляд фото на весь екран */
+  .lightbox {
+    width: 100vw; height: 100dvh; max-width: none; max-height: none;
+    margin: 0; padding: 0; border: 0;
+    background: #0d0c0b; color: #fff;
+    overscroll-behavior: contain;
+  }
+  .lightbox::backdrop { background: rgba(0,0,0,.6); }
+  .lightbox[open] { display: flex; flex-direction: column; }
+  .lb-top {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    font-size: 14px; font-weight: 600;
+  }
+  .lb-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+  .lb-count { opacity: .7; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .lb-stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; touch-action: pan-y; user-select: none; }
+  .lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .lb-btn {
+    width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    background: rgba(255,255,255,.14); color: #fff;
+    font-size: 26px; line-height: 1;
+    display: grid; place-items: center;
+  }
+  .lb-btn:hover, .lb-btn:focus-visible { background: rgba(255,255,255,.28); }
+  .lb-close { font-size: 22px; flex-shrink: 0; }
+  .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); }
+  .lb-prev { left: 12px; }
+  .lb-next { right: 12px; }
+  .lb-thumbs {
+    display: flex; gap: 6px; justify-content: center; overflow-x: auto;
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  .lb-thumbs button { padding: 0; border-radius: 6px; background: none; flex-shrink: 0; opacity: .5; border: 2px solid transparent; }
+  .lb-thumbs button.on { opacity: 1; border-color: #fff; }
+  .lightbox [hidden] { display: none !important; }
+  .lb-thumbs img { width: 52px; height: 52px; object-fit: cover; border-radius: 4px; display: block; }
   .badge {
     font-size: 11px;
     font-weight: 700;
@@ -322,6 +360,20 @@
 </div>
 
 <button type="button" class="to-top" id="toTop" aria-label="Наверх">↑</button>
+
+<dialog class="lightbox" id="lightbox" aria-label="Фото квартиры">
+  <div class="lb-top">
+    <span class="lb-title" id="lbTitle"></span>
+    <span class="lb-count" id="lbCount"></span>
+    <button type="button" class="lb-btn lb-close" id="lbClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="lb-stage" id="lbStage">
+    <img id="lbImg" alt="" draggable="false" />
+    <button type="button" class="lb-btn lb-nav lb-prev" id="lbPrev" aria-label="Предыдущее фото">‹</button>
+    <button type="button" class="lb-btn lb-nav lb-next" id="lbNext" aria-label="Следующее фото">›</button>
+  </div>
+  <div class="lb-thumbs" id="lbThumbs"></div>
+</dialog>
 
 <script>
 const STATUSES = [
@@ -463,7 +515,7 @@ function renderList() {
     <div class="card" data-id="${escapeHtml(a.id)}">
       ${photos.length ? `
       <div class="gallery">
-        ${ext(`<img class="photo" src="${escapeHtml(photos[idx])}" alt="" loading="lazy" draggable="false" />`, "photo-link")}
+        <img class="photo" src="${escapeHtml(photos[idx])}" alt="Открыть фото" loading="lazy" draggable="false" />
         ${photos.length > 1 ? `
         <button type="button" class="nav prev" aria-label="Предыдущее фото"><span>‹</span></button>
         <button type="button" class="nav next" aria-label="Следующее фото"><span>›</span></button>
@@ -578,11 +630,12 @@ function photosOf(a) {
   return list.map(safeUrl).filter(Boolean);
 }
 
-// Гортання: ліва/права третина фото, стрілки клавіатури, свайп.
+// Гортання в картці: ліва/права третина фото, свайп. Тап по центру — перегляд на весь екран.
 function bindGallery(card, id) {
   const g = card.querySelector(".gallery");
-  const photos = photosOf(apartments.find(a => a.id === id));
-  if (!g || photos.length < 2) return;
+  if (!g) return;
+  const apt = apartments.find(a => a.id === id);
+  const photos = photosOf(apt);
   const img = g.querySelector(".photo");
   const dots = [...g.querySelectorAll(".dots i")];
 
@@ -595,23 +648,73 @@ function bindGallery(card, id) {
   };
   const step = (d) => show((galleryIndex.get(id) || 0) + d);
 
+  let swiped = false;
+  img.addEventListener("click", () => {
+    if (swiped) { swiped = false; return; }
+    openLightbox(apt, galleryIndex.get(id) || 0, (i) => show(i));
+  });
+
+  if (photos.length < 2) return;
   g.querySelector(".prev").addEventListener("click", (e) => { e.preventDefault(); step(-1); });
   g.querySelector(".next").addEventListener("click", (e) => { e.preventDefault(); step(1); });
-
-  let x0 = null, y0 = null, swiped = false;
-  g.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; swiped = false; }, { passive: true });
-  g.addEventListener("touchend", (e) => {
-    if (x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { swiped = true; step(dx < 0 ? 1 : -1); }
-    x0 = null;
-  });
-  // Після свайпу не відкриваємо оголошення випадковим «кліком».
-  g.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); swiped = false; } }, true);
+  onSwipe(g, (dir) => { swiped = true; step(dir); });
 
   // Підвантажуємо сусідні фото, щоб гортання було без затримки.
   photos.forEach(src => { const i = new Image(); i.src = src; });
 }
+
+// dir: 1 — наступне (свайп вліво), -1 — попереднє.
+function onSwipe(el, cb) {
+  let x0 = null, y0 = null;
+  el.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  el.addEventListener("touchend", (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) cb(dx < 0 ? 1 : -1);
+    x0 = null;
+  });
+}
+
+// Модальний перегляд фото
+const lb = {
+  el: $("#lightbox"), img: $("#lbImg"), count: $("#lbCount"), title: $("#lbTitle"), thumbs: $("#lbThumbs"),
+  photos: [], i: 0, onChange: null,
+};
+function lbShow(i) {
+  const n = lb.photos.length;
+  lb.i = ((i % n) + n) % n;
+  lb.img.src = lb.photos[lb.i];
+  lb.count.textContent = n > 1 ? `${lb.i + 1} / ${n}` : "";
+  lb.thumbs.querySelectorAll("button").forEach((b, k) => b.classList.toggle("on", k === lb.i));
+  lb.thumbs.querySelector("button.on")?.scrollIntoView({ block: "nearest", inline: "center" });
+  lb.onChange?.(lb.i);
+}
+function openLightbox(apt, i, onChange) {
+  lb.photos = photosOf(apt);
+  if (!lb.photos.length) return;
+  lb.onChange = onChange;
+  lb.title.textContent = apt.address || "";
+  const many = lb.photos.length > 1;
+  $("#lbPrev").hidden = $("#lbNext").hidden = !many;
+  lb.thumbs.hidden = !many;
+  lb.thumbs.innerHTML = many ? lb.photos.map((src, k) => `<button type="button" data-k="${k}" aria-label="Фото ${k + 1}"><img src="${escapeHtml(src)}" alt="" loading="lazy" /></button>`).join("") : "";
+  lb.thumbs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => lbShow(+b.dataset.k)));
+  document.body.style.overflow = "hidden";
+  lb.el.showModal();
+  lbShow(i);
+}
+function closeLightbox() { if (lb.el.open) lb.el.close(); }
+lb.el.addEventListener("close", () => { document.body.style.overflow = ""; lb.img.removeAttribute("src"); });
+$("#lbClose").addEventListener("click", closeLightbox);
+$("#lbPrev").addEventListener("click", () => lbShow(lb.i - 1));
+$("#lbNext").addEventListener("click", () => lbShow(lb.i + 1));
+// Клік по темному полю (не по фото й не по кнопках) — закрити.
+$("#lbStage").addEventListener("click", (e) => { if (e.target.id === "lbStage") closeLightbox(); });
+lb.el.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") { e.preventDefault(); lbShow(lb.i - 1); }
+  if (e.key === "ArrowRight") { e.preventDefault(); lbShow(lb.i + 1); }
+});
+onSwipe($("#lbStage"), (dir) => lb.photos.length > 1 && lbShow(lb.i + dir));
 
 async function uploadPhotos(files, onProgress) {
   const urls = [];
