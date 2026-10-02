@@ -2,7 +2,7 @@ import { getStore } from "@netlify/blobs";
 import seed from "./seed.json" with { type: "json" };
 
 // Дані: одна квартира = один blob "apt/<id>". Фото = blob "photo/<id>".
-const STATUSES = ["noted", "contacted", "called", "responded", "viewing", "declined", "success"];
+const STATUSES = ["noted", "contacted", "called", "responded", "viewing", "viewed", "declined", "success"];
 const FIELDS = ["address", "link", "price", "notes", "status"];
 const MAX_PHOTOS = 20;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
