@@ -22,8 +22,8 @@
     --status-contacted: #4a7fb5;
     --status-called: #b58a1d;
     --status-responded: #3f9d5e;
-    --status-viewing: #7a4ab5;
-    --status-viewed: #2a8f8f;
+    --status-viewing: #2a8f8f;
+    --status-viewed: #7a4ab5;
     --star: #d99a00;
     --status-declined: #b5504a;
     --status-success: #2f8f5b;
@@ -180,6 +180,11 @@
     box-shadow: var(--shadow);
     padding: 14px 16px;
     margin-bottom: 0;
+  }
+  /* Обрані квартири: легкий відтінок кольору зірочки */
+  .card.approved {
+    background: color-mix(in srgb, var(--star) 9%, var(--card-bg));
+    border-color: color-mix(in srgb, var(--star) 45%, var(--border));
   }
   .star { color: var(--star); font-size: 16px; margin-right: 5px; line-height: 1; display: inline-block; text-decoration: none; }
   .approveBtn.on { color: var(--star); border-color: var(--star); }
@@ -533,7 +538,7 @@ function renderList() {
     try { site = link ? new URL(link, location.href).hostname.replace(/^(www|en|de|fr|it)\./, "") : ""; } catch {}
     const addrText = escapeHtml(a.address) || (site ? "Объявление на " + escapeHtml(site) : "Без адреса");
     return `
-    <div class="card" data-id="${escapeHtml(a.id)}">
+    <div class="card ${a.approved ? "approved" : ""}" data-id="${escapeHtml(a.id)}">
       ${photos.length ? `
       <div class="gallery">
         <img class="photo" src="${escapeHtml(photos[idx])}" alt="Открыть фото" loading="lazy" draggable="false" />
