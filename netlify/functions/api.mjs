@@ -2,7 +2,7 @@ import { getStore } from "@netlify/blobs";
 import seed from "./seed.json" with { type: "json" };
 
 // Дані: одна квартира = один blob "apt/<id>". Фото = blob "photo/<id>".
-const STATUSES = ["noted", "contacted", "called", "responded", "viewing", "viewed", "declined", "success"];
+const STATUSES = ["noted", "contacted", "called", "responded", "viewing", "viewed", "success"];
 const FIELDS = ["address", "link", "price", "notes", "status"];
 const MAX_PHOTOS = 20;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
@@ -23,8 +23,14 @@ function clean(input) {
   for (const k of FIELDS) {
     if (typeof input?.[k] === "string") out[k] = input[k].slice(0, 5000);
   }
+  // Колишній статус «Отказ» тепер окрема позначка rejected.
+  if (out.status === "declined") { out.rejected = true; out.status = "noted"; }
   if (out.status && !STATUSES.includes(out.status)) delete out.status;
   if (typeof input?.approved === "boolean") out.approved = input.approved;
+  if (typeof input?.rejected === "boolean") out.rejected = input.rejected;
+  // «Подходит» і «Отсеяли» взаємовиключні.
+  if (out.approved === true) out.rejected = false;
+  if (out.rejected === true) out.approved = false;
   // Кілька фото: масив шляхів. Старе поле photoUrl теж приймаємо.
   let photos = Array.isArray(input?.photos) ? input.photos : typeof input?.photoUrl === "string" ? [input.photoUrl] : null;
   if (photos) out.photos = photos.filter(isPhotoPath).slice(0, MAX_PHOTOS);
@@ -37,7 +43,9 @@ const isPhotoPath = (p) => typeof p === "string" && /^\/(api\/photos|photos)\/[\
 function normalize(apt) {
   if (!apt) return apt;
   const { photoUrl, ...rest } = apt;
-  return { ...rest, photos: Array.isArray(apt.photos) ? apt.photos : photoUrl ? [photoUrl] : [] };
+  const out = { ...rest, photos: Array.isArray(apt.photos) ? apt.photos : photoUrl ? [photoUrl] : [] };
+  if (out.status === "declined") { out.status = "noted"; out.rejected = true; out.approved = false; }
+  return out;
 }
 
 const blobKey = (p) => (p.startsWith("/api/photos/") ? `photo/${p.split("/").pop()}` : null);
