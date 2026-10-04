@@ -24,6 +24,7 @@
     --status-responded: #3f9d5e;
     --status-viewing: #2a8f8f;
     --status-viewed: #7a4ab5;
+    --status-applied: #b04a8f;
     --star: #d99a00;
     --status-declined: #b5504a;
     --status-success: #2f8f5b;
@@ -323,7 +324,11 @@
     padding: 3px 9px;
     border-radius: 999px;
     color: #fff;
-    white-space: nowrap;
+    max-width: 45%;
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 1.3;
+    text-wrap: balance;
   }
   .edit-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
   .edit-box .card-controls { margin-top: 0; }
@@ -416,6 +421,7 @@ const STATUSES = [
   { id: "responded",  label: "Есть ответ",      color: "var(--status-responded)" },
   { id: "viewing",    label: "Договорились о просмотре", color: "var(--status-viewing)" },
   { id: "viewed",     label: "Посмотрели",      color: "var(--status-viewed)" },
+  { id: "applied",    label: "Заполнили форму и отправили", color: "var(--status-applied)" },
   { id: "success",    label: "Сняли!",          color: "var(--status-success)" },
 ];
 const statusMap = Object.fromEntries(STATUSES.map(s => [s.id, s]));
