@@ -535,7 +535,8 @@ function renderList() {
   const items = (activeFilter === "all" ? apartments
     : activeFilter === "approved" ? apartments.filter(a => a.approved)
     : activeFilter === "rejected" ? apartments.filter(a => a.rejected)
-    : apartments.filter(a => a.status === activeFilter));
+    : apartments.filter(a => a.status === activeFilter))
+    .slice().sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0)); // відсіяні — вниз, решта в тому ж порядку
   if (!items.length) {
     listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
     return;
