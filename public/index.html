@@ -516,10 +516,11 @@ $("#loginPanel").addEventListener("submit", async (e) => {
 });
 
 function renderFilters() {
-  const counts = { all: apartments.length, approved: apartments.filter(a => a.approved).length, rejected: apartments.filter(a => a.rejected).length };
-  STATUSES.forEach(s => counts[s.id] = apartments.filter(a => a.status === s.id).length);
+  const active = apartments.filter(a => !a.rejected); // відсіяні рахуються лише в «Отсеянные»
+  const counts = { all: active.length, approved: active.filter(a => a.approved).length, rejected: apartments.length - active.length };
+  STATUSES.forEach(s => counts[s.id] = active.filter(a => a.status === s.id).length);
   // Порожні статуси не показуємо, щоб список був коротким (крім активного).
-  const chips = [{ id: "all", label: "Все", color: "var(--accent)" }, { id: "approved", label: "★ Подходят", color: "var(--star)" }, ...STATUSES, { id: "rejected", label: "✕ Отсеянные", color: "var(--text-muted)" }]
+  const chips = [{ id: "all", label: "Актуально", color: "var(--accent)" }, { id: "approved", label: "★ Подходят", color: "var(--star)" }, ...STATUSES, { id: "rejected", label: "✕ Отсеянные", color: "var(--text-muted)" }]
     .filter(c => c.id === "all" || counts[c.id] || c.id === activeFilter);
   filtersEl.innerHTML = chips.map(c => `
     <button type="button" class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}" style="--c:${c.color}" aria-pressed="${activeFilter === c.id}">
@@ -532,8 +533,8 @@ function renderFilters() {
 }
 
 // Картка, відкрита на редагування, лишається там, де була при відкритті:
-// фільтр і сортування дивляться на її стан на момент «Изменить», тож
-// «Не подходит», «Подходит» чи новий статус переміщують/ховають її лише після «Готово».
+// фільтр дивиться на її стан на момент «Изменить», тож «Не подходит»,
+// «Подходит» чи новий статус ховають її з поточної категорії лише після «Готово».
 function placed(a) {
   return canEdit && editingCards.has(a.id) ? editingCards.get(a.id) : a;
 }
@@ -541,11 +542,13 @@ function placed(a) {
 function renderList() {
   const items = apartments.filter(a => {
     const p = placed(a);
+    // Відсіяні видно лише в «Отсеянные»; в усіх інших категоріях їх немає.
+    if (activeFilter === "rejected") return p.rejected;
+    if (p.rejected) return false;
     return activeFilter === "all" ? true
       : activeFilter === "approved" ? p.approved
-      : activeFilter === "rejected" ? p.rejected
       : p.status === activeFilter;
-  }).sort((a, b) => (placed(a).rejected ? 1 : 0) - (placed(b).rejected ? 1 : 0)); // відсіяні — вниз, решта в тому ж порядку
+  });
   if (!items.length) {
     listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
     return;
