@@ -531,12 +531,21 @@ function renderFilters() {
   }));
 }
 
+// Картка, відкрита на редагування, лишається там, де була при відкритті:
+// фільтр і сортування дивляться на її стан на момент «Изменить», тож
+// «Не подходит», «Подходит» чи новий статус переміщують/ховають її лише після «Готово».
+function placed(a) {
+  return canEdit && editingCards.has(a.id) ? editingCards.get(a.id) : a;
+}
+
 function renderList() {
-  const items = (activeFilter === "all" ? apartments
-    : activeFilter === "approved" ? apartments.filter(a => a.approved)
-    : activeFilter === "rejected" ? apartments.filter(a => a.rejected)
-    : apartments.filter(a => a.status === activeFilter))
-    .slice().sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0)); // відсіяні — вниз, решта в тому ж порядку
+  const items = apartments.filter(a => {
+    const p = placed(a);
+    return activeFilter === "all" ? true
+      : activeFilter === "approved" ? p.approved
+      : activeFilter === "rejected" ? p.rejected
+      : p.status === activeFilter;
+  }).sort((a, b) => (placed(a).rejected ? 1 : 0) - (placed(b).rejected ? 1 : 0)); // відсіяні — вниз, решта в тому ж порядку
   if (!items.length) {
     listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
     return;
@@ -615,7 +624,7 @@ function bindCard(card) {
     const ta = card.querySelector(".notesInput");
     const apt = apartments.find(a => a.id === id);
     if (ta && apt && ta.value !== (apt.notes || "")) { apt.notes = ta.value; updateApartment(id, { notes: ta.value }, false); }
-    if (editingCards.has(id)) editingCards.delete(id); else editingCards.add(id);
+    if (editingCards.has(id)) editingCards.delete(id); else editingCards.set(id, { rejected: !!apt?.rejected, approved: !!apt?.approved, status: apt?.status });
     editingNotes = null;
     renderList();
   });
@@ -684,7 +693,7 @@ function bindCard(card) {
   });
 }
 
-const editingCards = new Set(); // id карток, розгорнутих для редагування
+const editingCards = new Map(); // id карток, розгорнутих для редагування → її rejected/approved/status на момент відкриття
 const galleryIndex = new Map(); // id квартири → номер показаного фото (переживає перемальовування)
 
 function photosOf(a) {
