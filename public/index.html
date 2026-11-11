@@ -332,6 +332,9 @@
   }
   .edit-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
   .edit-box .card-controls { margin-top: 0; }
+  .fields-box { display: grid; grid-template-columns: 1fr 110px; gap: 8px; margin-bottom: 8px; }
+  .fields-box .field-address { grid-column: 1 / -1; }
+  .fields-box input { font-size: 14px; min-width: 0; }
   .edit-footer { display: flex; justify-content: flex-end; margin-top: 6px; }
   .notes-view { margin-top: 8px; font-size: 13.5px; white-space: pre-wrap; }
   .card-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -586,6 +589,11 @@ function renderList() {
       ${!(canEdit && editingCards.has(a.id)) && a.notes ? `<div class="notes-view">${escapeHtml(a.notes)}</div>` : ""}
       ${canEdit && editingCards.has(a.id) ? `
       <div class="edit-box">
+        <div class="fields-box">
+          <input class="fieldInput field-address" data-field="address" value="${escapeHtml(a.address)}" placeholder="Адрес / название" aria-label="Адрес / название" autocomplete="off" />
+          <input class="fieldInput" data-field="link" value="${escapeHtml(a.link)}" placeholder="Ссылка на объявление" aria-label="Ссылка на объявление" autocomplete="off" inputmode="url" />
+          <input class="fieldInput" data-field="price" value="${escapeHtml(a.price)}" placeholder="Цена, CHF" aria-label="Цена, CHF" autocomplete="off" inputmode="numeric" />
+        </div>
         <div class="card-controls">
           <select class="statusSelect" aria-label="Статус">
             ${STATUSES.map(s => `<option value="${s.id}" ${s.id === a.status ? "selected" : ""}>${s.label}</option>`).join("")}
@@ -623,10 +631,16 @@ function bindCard(card) {
 
   bindGallery(card, id);
   card.querySelector(".editToggle").addEventListener("click", () => {
-    // Якщо нотатку ще не встигли зберегти — зберігаємо зараз.
-    const ta = card.querySelector(".notesInput");
+    // Якщо нотатку чи поля ще не встигли зберегти — зберігаємо зараз.
     const apt = apartments.find(a => a.id === id);
-    if (ta && apt && ta.value !== (apt.notes || "")) { apt.notes = ta.value; updateApartment(id, { notes: ta.value }, false); }
+    const pending = {};
+    const ta = card.querySelector(".notesInput");
+    if (ta && apt && ta.value !== (apt.notes || "")) pending.notes = ta.value;
+    card.querySelectorAll(".fieldInput").forEach(inp => {
+      const v = inp.value.trim();
+      if (apt && v !== (apt[inp.dataset.field] || "")) pending[inp.dataset.field] = v;
+    });
+    if (apt && Object.keys(pending).length) { Object.assign(apt, pending); updateApartment(id, pending, false); }
     if (editingCards.has(id)) editingCards.delete(id); else editingCards.set(id, { rejected: !!apt?.rejected, approved: !!apt?.approved, status: apt?.status });
     editingNotes = null;
     renderList();
@@ -634,6 +648,18 @@ function bindCard(card) {
   if (!selectEl) return; // картка не в режимі редагування
 
   selectEl.addEventListener("change", () => updateApartment(id, { status: selectEl.value }));
+
+  // Назва, посилання, ціна: зберігаємо без перемальовування, щоб не збивати фокус.
+  card.querySelectorAll(".fieldInput").forEach(inp => {
+    let t;
+    inp.addEventListener("focus", () => { editingNotes = id; });
+    inp.addEventListener("blur", () => { editingNotes = null; });
+    inp.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(() => updateApartment(id, { [inp.dataset.field]: inp.value.trim() }, false), 700);
+    });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+  });
 
   let timer;
   notesEl.addEventListener("focus", () => { editingNotes = id; });
