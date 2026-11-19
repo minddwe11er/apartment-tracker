@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -549,7 +549,8 @@ const I18N = {
     "err.not_image": "That's not an image", "err.photo_too_big": "Photo is too large",
   },
 };
-let lang = (() => { try { const l = localStorage.getItem("apt-lang"); return I18N[l] ? l : "ru"; } catch { return "ru"; } })();
+const DEFAULT_LANG = "de";
+let lang = (() => { try { const l = localStorage.getItem("apt-lang"); return I18N[l] ? l : DEFAULT_LANG; } catch { return DEFAULT_LANG; } })();
 function t(key, params = {}) {
   const s = I18N[lang][key] ?? I18N.ru[key] ?? key;
   return s.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? "");
@@ -1122,10 +1123,10 @@ $("#btnTheme").addEventListener("click", () => {
 // Перемикач мови інтерфейсу; вибір запам'ятовується на цьому пристрої.
 const langSelect = $("#langSelect");
 langSelect.innerHTML = LANGS.map(l => `<option value="${l.id}" title="${l.name}">${l.label}</option>`).join("");
-function applyLang(id) {
-  lang = I18N[id] ? id : "ru";
+function applyLang(id, save = false) {
+  lang = I18N[id] ? id : DEFAULT_LANG;
   langSelect.value = lang;
-  store.set("apt-lang", lang === "ru" ? null : lang);
+  if (save) store.set("apt-lang", lang); // зберігаємо лише явний вибір
   applyStaticI18n();
   updateModeTexts();
   updateAddPhotoBtn();
@@ -1133,7 +1134,7 @@ function applyLang(id) {
   renderFilters();
   if (apartments.length || listEl.querySelector(".card")) renderList();
 }
-langSelect.addEventListener("change", () => applyLang(langSelect.value));
+langSelect.addEventListener("change", () => applyLang(langSelect.value, true));
 applyLang(lang);
 
 // Кнопка «наверх»: з'являється, коли прокрутили більше ніж на екран.
