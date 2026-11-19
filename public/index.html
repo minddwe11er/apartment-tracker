@@ -77,6 +77,20 @@
   .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
   .header-actions { display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px; }
   .theme-btn { padding: 9px 11px; font-size: 16px; line-height: 1; }
+  .lang-select {
+    width: auto;
+    padding: 8px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .lang-select:hover { color: var(--text); }
+  /* На вузькому екрані кнопка входу — лише значок, щоб шапка вміщалась будь-якою мовою */
+  @media (max-width: 480px) { .lock-btn .lock-text { display: none; } .lock-btn { padding: 9px 11px; } }
   .banner {
     display: none;
     font-size: 13px;
@@ -351,81 +365,214 @@
 <div class="wrap readonly" id="app">
   <header>
     <div>
-      <h1>🏠 Квартиры</h1>
-      <div class="subtitle" id="subtitle">Общий список</div>
+      <h1 data-i18n="appTitle">🏠 Квартиры</h1>
+      <div class="subtitle" id="subtitle" data-i18n="subtitle">Общий список</div>
     </div>
     <div class="header-actions">
+      <select class="lang-select" id="langSelect" data-i18n-aria="language"></select>
       <button type="button" class="btn-ghost theme-btn" id="btnTheme" aria-label="Тема" title="Тема">🌓</button>
-      <button class="btn-ghost lock-btn" id="btnLock" style="visibility:hidden">🔒 Войти</button>
+      <button class="btn-ghost lock-btn" id="btnLock" style="visibility:hidden"><span aria-hidden="true">🔒</span> <span class="lock-text">Войти</span></button>
     </div>
   </header>
 
   <div class="banner" id="banner"></div>
 
   <form class="panel" id="loginPanel" style="display:none">
-    <h2>Пароль для редактирования</h2>
+    <h2 data-i18n="loginTitle">Пароль для редактирования</h2>
     <div class="row">
-      <input id="inPassword" type="password" autocomplete="current-password" placeholder="Пароль" />
-      <button class="btn-primary" type="submit" style="flex:0">Войти</button>
+      <input id="inPassword" type="password" autocomplete="current-password" placeholder="Пароль" data-i18n-ph="password" />
+      <button class="btn-primary" type="submit" style="flex:0" data-i18n="loginBtn">Войти</button>
     </div>
   </form>
 
   <div class="add-wrap edit-only">
-  <button type="button" class="btn-primary add-toggle" id="btnShowAdd">＋ Добавить квартиру</button>
+  <button type="button" class="btn-primary add-toggle" id="btnShowAdd" data-i18n="addOpen">＋ Добавить квартиру</button>
   <div class="panel" id="addPanel" hidden>
     <div class="panel-head">
-      <h2>Добавить квартиру</h2>
-      <button type="button" class="btn-ghost btn-sm" id="btnHideAdd" aria-label="Свернуть">✕</button>
+      <h2 data-i18n="addTitle">Добавить квартиру</h2>
+      <button type="button" class="btn-ghost btn-sm" id="btnHideAdd" aria-label="Свернуть" data-i18n-aria="collapse">✕</button>
     </div>
     <div class="row">
-      <input id="inAddress" placeholder="Адрес / название" autocomplete="off" />
+      <input id="inAddress" placeholder="Адрес / название" data-i18n-ph="phAddress" autocomplete="off" />
     </div>
     <div class="row">
-      <input id="inLink" placeholder="Ссылка на объявление" autocomplete="off" />
-      <input id="inPrice" placeholder="Цена (например 1450)" autocomplete="off" />
+      <input id="inLink" placeholder="Ссылка на объявление" data-i18n-ph="phLink" autocomplete="off" />
+      <input id="inPrice" placeholder="Цена (например 1450)" data-i18n-ph="phPrice" autocomplete="off" />
     </div>
     <div class="row">
-      <textarea id="inNotes" placeholder="Заметка (необязательно)"></textarea>
+      <textarea id="inNotes" placeholder="Заметка (необязательно)" data-i18n-ph="phNotesAdd"></textarea>
     </div>
     <div class="add-photo" id="addPhoto">
       <div id="addThumbs" style="display:contents"></div>
       <button type="button" class="btn-ghost" id="btnAddPhoto">📷 Добавить фото</button>
       <input type="file" accept="image/*" multiple id="inPhoto" hidden />
     </div>
-    <button class="btn-primary" id="btnAdd">Добавить</button>
+    <button class="btn-primary" id="btnAdd" data-i18n="add">Добавить</button>
   </div>
   </div>
 
   <div class="filters" id="filters"></div>
-  <div id="list"><div class="empty">Загрузка…</div></div>
+  <div id="list"><div class="empty" data-i18n="loading">Загрузка…</div></div>
 </div>
 
-<button type="button" class="to-top" id="toTop" aria-label="Наверх">↑</button>
+<button type="button" class="to-top" id="toTop" aria-label="Наверх" data-i18n-aria="toTop">↑</button>
 
-<dialog class="lightbox" id="lightbox" aria-label="Фото квартиры">
+<dialog class="lightbox" id="lightbox" aria-label="Фото квартиры" data-i18n-aria="lightbox">
   <div class="lb-top">
     <span class="lb-title" id="lbTitle"></span>
     <span class="lb-count" id="lbCount"></span>
-    <button type="button" class="lb-btn lb-close" id="lbClose" aria-label="Закрыть">✕</button>
+    <button type="button" class="lb-btn lb-close" id="lbClose" aria-label="Закрыть" data-i18n-aria="close">✕</button>
   </div>
   <div class="lb-stage" id="lbStage">
     <img id="lbImg" alt="" draggable="false" />
-    <button type="button" class="lb-btn lb-nav lb-prev" id="lbPrev" aria-label="Предыдущее фото">‹</button>
-    <button type="button" class="lb-btn lb-nav lb-next" id="lbNext" aria-label="Следующее фото">›</button>
+    <button type="button" class="lb-btn lb-nav lb-prev" id="lbPrev" aria-label="Предыдущее фото" data-i18n-aria="prevPhoto">‹</button>
+    <button type="button" class="lb-btn lb-nav lb-next" id="lbNext" aria-label="Следующее фото" data-i18n-aria="nextPhoto">›</button>
   </div>
   <div class="lb-thumbs" id="lbThumbs"></div>
 </dialog>
 
 <script>
+// Мови інтерфейсу. Дані (адреси, нотатки) не перекладаються.
+const LANGS = [
+  { id: "ru", label: "RU", name: "Русский",    locale: "ru-RU" },
+  { id: "uk", label: "UA", name: "Українська", locale: "uk-UA" },
+  { id: "de", label: "DE", name: "Deutsch",    locale: "de-CH" },
+  { id: "en", label: "EN", name: "English",    locale: "en-GB" },
+];
+const I18N = {
+  ru: {
+    docTitle: "Квартиры — трекер", appTitle: "🏠 Квартиры", language: "Язык",
+    subtitle: "Общий список", subtitleEdit: "Общий список — режим редактирования", subtitleView: "Общий список — только просмотр",
+    login: "Войти", logout: "Выйти", loginTitle: "Пароль для редактирования", password: "Пароль", loginBtn: "Войти",
+    theme: "Тема", themeAuto: "Тема: как в системе", themeLight: "Тема: светлая", themeDark: "Тема: тёмная",
+    addOpen: "＋ Добавить квартиру", addTitle: "Добавить квартиру", collapse: "Свернуть", add: "Добавить",
+    phAddress: "Адрес / название", phLink: "Ссылка на объявление", phPrice: "Цена (например 1450)", phPriceShort: "Цена, CHF",
+    phNotesAdd: "Заметка (необязательно)", phNotes: "Заметка / что ответили",
+    addPhoto: "📷 Добавить фото", morePhoto: "📷 Ещё фото", removeThumb: "Убрать фото",
+    loading: "Загрузка…", toTop: "Наверх", lightbox: "Фото квартиры", close: "Закрыть",
+    prevPhoto: "Предыдущее фото", nextPhoto: "Следующее фото", openPhoto: "Открыть фото", photoN: "Фото {n}",
+    "status.noted": "На рассмотрении", "status.contacted": "Написали", "status.called": "Позвонили", "status.responded": "Есть ответ",
+    "status.viewing": "Договорились о просмотре", "status.viewed": "Посмотрели", "status.applied": "Отправили формуляр", "status.success": "Сняли!",
+    statusLabel: "Статус", filterAll: "Актуально", filterApproved: "★ Подходят", filterRejected: "✕ Отсеянные",
+    fit: "Подходит", approveOn: "★ Подходит", approveOff: "☆ Подходит", rejectedMark: "Отсеяли", rejectOn: "✕ Отсеяли", rejectOff: "✕ Не подходит",
+    emptyFilter: "В этой категории пусто.", emptyAll: "Пока пусто.", listingOn: "Объявление на {site}", noAddress: "Без адреса",
+    removePhoto: "Удалить это фото", confirmRemovePhoto: "Точно удалить фото?", deleteApt: "Удалить квартиру", confirmDelete: "Точно удалить?",
+    updated: "обновлено {d}", edit: "✎ Изменить", done: "✓ Готово",
+    uploading: "Загрузка {i}/{n}…", uploadingAdd: "Загружаем фото {i}/{n}…", saving: "Сохраняем…",
+    photoFailed: "Фото не загрузилось: {e}", notSaved: "Не сохранилось: {e}", notDeleted: "Не удалилось: {e}", notAdded: "Не добавилось: {e}",
+    needAddress: "Укажите хотя бы адрес или ссылку на объявление.", noConnection: "Нет связи с сервером: {e}",
+    wrongPassword: "Неверный пароль", wrongPasswordRelogin: "Неверный пароль — войдите снова", errorStatus: "Ошибка {s}",
+    noPassword: "⚠️ Пароль не настроен: сервер не видит переменную APP_PASSWORD, поэтому редактировать может любой. Проверьте переменную в Netlify и сделайте новый деплой.",
+    imgProcess: "не удалось обработать", imgRead: "не удалось прочитать изображение",
+    "err.wrong_password": "Неверный пароль", "err.need_address": "Нужен адрес или ссылка", "err.not_found": "Не найдено",
+    "err.not_image": "Это не изображение", "err.photo_too_big": "Фото слишком большое",
+  },
+  uk: {
+    docTitle: "Квартири — трекер", appTitle: "🏠 Квартири", language: "Мова",
+    subtitle: "Спільний список", subtitleEdit: "Спільний список — режим редагування", subtitleView: "Спільний список — лише перегляд",
+    login: "Увійти", logout: "Вийти", loginTitle: "Пароль для редагування", password: "Пароль", loginBtn: "Увійти",
+    theme: "Тема", themeAuto: "Тема: як у системі", themeLight: "Тема: світла", themeDark: "Тема: темна",
+    addOpen: "＋ Додати квартиру", addTitle: "Додати квартиру", collapse: "Згорнути", add: "Додати",
+    phAddress: "Адреса / назва", phLink: "Посилання на оголошення", phPrice: "Ціна (наприклад 1450)", phPriceShort: "Ціна, CHF",
+    phNotesAdd: "Нотатка (необов'язково)", phNotes: "Нотатка / що відповіли",
+    addPhoto: "📷 Додати фото", morePhoto: "📷 Ще фото", removeThumb: "Прибрати фото",
+    loading: "Завантаження…", toTop: "Нагору", lightbox: "Фото квартири", close: "Закрити",
+    prevPhoto: "Попереднє фото", nextPhoto: "Наступне фото", openPhoto: "Відкрити фото", photoN: "Фото {n}",
+    "status.noted": "На розгляді", "status.contacted": "Написали", "status.called": "Подзвонили", "status.responded": "Є відповідь",
+    "status.viewing": "Домовились про перегляд", "status.viewed": "Подивились", "status.applied": "Надіслали формуляр", "status.success": "Зняли!",
+    statusLabel: "Статус", filterAll: "Актуальні", filterApproved: "★ Підходять", filterRejected: "✕ Відсіяні",
+    fit: "Підходить", approveOn: "★ Підходить", approveOff: "☆ Підходить", rejectedMark: "Відсіяли", rejectOn: "✕ Відсіяли", rejectOff: "✕ Не підходить",
+    emptyFilter: "У цій категорії порожньо.", emptyAll: "Поки порожньо.", listingOn: "Оголошення на {site}", noAddress: "Без адреси",
+    removePhoto: "Видалити це фото", confirmRemovePhoto: "Точно видалити фото?", deleteApt: "Видалити квартиру", confirmDelete: "Точно видалити?",
+    updated: "оновлено {d}", edit: "✎ Змінити", done: "✓ Готово",
+    uploading: "Завантаження {i}/{n}…", uploadingAdd: "Завантажуємо фото {i}/{n}…", saving: "Зберігаємо…",
+    photoFailed: "Фото не завантажилось: {e}", notSaved: "Не збереглося: {e}", notDeleted: "Не видалилося: {e}", notAdded: "Не додалося: {e}",
+    needAddress: "Вкажіть хоча б адресу або посилання на оголошення.", noConnection: "Немає зв'язку з сервером: {e}",
+    wrongPassword: "Невірний пароль", wrongPasswordRelogin: "Невірний пароль — увійдіть знову", errorStatus: "Помилка {s}",
+    noPassword: "⚠️ Пароль не налаштовано: сервер не бачить змінну APP_PASSWORD, тому редагувати може будь-хто. Перевірте змінну в Netlify і зробіть новий деплой.",
+    imgProcess: "не вдалося обробити", imgRead: "не вдалося прочитати зображення",
+    "err.wrong_password": "Невірний пароль", "err.need_address": "Потрібна адреса або посилання", "err.not_found": "Не знайдено",
+    "err.not_image": "Це не зображення", "err.photo_too_big": "Фото завелике",
+  },
+  de: {
+    docTitle: "Wohnungen – Tracker", appTitle: "🏠 Wohnungen", language: "Sprache",
+    subtitle: "Gemeinsame Liste", subtitleEdit: "Gemeinsame Liste – Bearbeitungsmodus", subtitleView: "Gemeinsame Liste – nur Ansicht",
+    login: "Anmelden", logout: "Abmelden", loginTitle: "Passwort zum Bearbeiten", password: "Passwort", loginBtn: "Anmelden",
+    theme: "Darstellung", themeAuto: "Darstellung: wie System", themeLight: "Darstellung: hell", themeDark: "Darstellung: dunkel",
+    addOpen: "＋ Wohnung hinzufügen", addTitle: "Wohnung hinzufügen", collapse: "Einklappen", add: "Hinzufügen",
+    phAddress: "Adresse / Bezeichnung", phLink: "Link zum Inserat", phPrice: "Miete (z. B. 1450)", phPriceShort: "Miete, CHF",
+    phNotesAdd: "Notiz (optional)", phNotes: "Notiz / Antwort",
+    addPhoto: "📷 Foto hinzufügen", morePhoto: "📷 Weitere Fotos", removeThumb: "Foto entfernen",
+    loading: "Wird geladen…", toTop: "Nach oben", lightbox: "Fotos der Wohnung", close: "Schliessen",
+    prevPhoto: "Vorheriges Foto", nextPhoto: "Nächstes Foto", openPhoto: "Foto öffnen", photoN: "Foto {n}",
+    "status.noted": "In Prüfung", "status.contacted": "Angeschrieben", "status.called": "Angerufen", "status.responded": "Antwort erhalten",
+    "status.viewing": "Besichtigung vereinbart", "status.viewed": "Besichtigt", "status.applied": "Formular eingereicht", "status.success": "Gemietet!",
+    statusLabel: "Status", filterAll: "Aktuell", filterApproved: "★ Passen", filterRejected: "✕ Aussortiert",
+    fit: "Passt", approveOn: "★ Passt", approveOff: "☆ Passt", rejectedMark: "Aussortiert", rejectOn: "✕ Aussortiert", rejectOff: "✕ Passt nicht",
+    emptyFilter: "In dieser Kategorie ist nichts.", emptyAll: "Noch leer.", listingOn: "Inserat auf {site}", noAddress: "Ohne Adresse",
+    removePhoto: "Dieses Foto löschen", confirmRemovePhoto: "Foto wirklich löschen?", deleteApt: "Wohnung löschen", confirmDelete: "Wirklich löschen?",
+    updated: "aktualisiert {d}", edit: "✎ Bearbeiten", done: "✓ Fertig",
+    uploading: "Hochladen {i}/{n}…", uploadingAdd: "Fotos werden hochgeladen {i}/{n}…", saving: "Wird gespeichert…",
+    photoFailed: "Foto nicht hochgeladen: {e}", notSaved: "Nicht gespeichert: {e}", notDeleted: "Nicht gelöscht: {e}", notAdded: "Nicht hinzugefügt: {e}",
+    needAddress: "Bitte mindestens eine Adresse oder einen Link zum Inserat angeben.", noConnection: "Keine Verbindung zum Server: {e}",
+    wrongPassword: "Falsches Passwort", wrongPasswordRelogin: "Falsches Passwort – bitte erneut anmelden", errorStatus: "Fehler {s}",
+    noPassword: "⚠️ Kein Passwort eingerichtet: Der Server sieht die Variable APP_PASSWORD nicht, daher kann jeder bearbeiten. Prüfe die Variable in Netlify und starte einen neuen Deploy.",
+    imgProcess: "konnte nicht verarbeitet werden", imgRead: "Bild konnte nicht gelesen werden",
+    "err.wrong_password": "Falsches Passwort", "err.need_address": "Adresse oder Link erforderlich", "err.not_found": "Nicht gefunden",
+    "err.not_image": "Das ist kein Bild", "err.photo_too_big": "Foto ist zu gross",
+  },
+  en: {
+    docTitle: "Apartments – Tracker", appTitle: "🏠 Apartments", language: "Language",
+    subtitle: "Shared list", subtitleEdit: "Shared list – editing", subtitleView: "Shared list – view only",
+    login: "Log in", logout: "Log out", loginTitle: "Password to edit", password: "Password", loginBtn: "Log in",
+    theme: "Theme", themeAuto: "Theme: system", themeLight: "Theme: light", themeDark: "Theme: dark",
+    addOpen: "＋ Add apartment", addTitle: "Add apartment", collapse: "Collapse", add: "Add",
+    phAddress: "Address / name", phLink: "Listing link", phPrice: "Rent (e.g. 1450)", phPriceShort: "Rent, CHF",
+    phNotesAdd: "Note (optional)", phNotes: "Note / their reply",
+    addPhoto: "📷 Add photo", morePhoto: "📷 More photos", removeThumb: "Remove photo",
+    loading: "Loading…", toTop: "Back to top", lightbox: "Apartment photos", close: "Close",
+    prevPhoto: "Previous photo", nextPhoto: "Next photo", openPhoto: "Open photo", photoN: "Photo {n}",
+    "status.noted": "Considering", "status.contacted": "Messaged", "status.called": "Called", "status.responded": "Got a reply",
+    "status.viewing": "Viewing booked", "status.viewed": "Viewed", "status.applied": "Application sent", "status.success": "Rented!",
+    statusLabel: "Status", filterAll: "Active", filterApproved: "★ Good fit", filterRejected: "✕ Ruled out",
+    fit: "Good fit", approveOn: "★ Good fit", approveOff: "☆ Good fit", rejectedMark: "Ruled out", rejectOn: "✕ Ruled out", rejectOff: "✕ Not a fit",
+    emptyFilter: "Nothing in this category.", emptyAll: "Nothing here yet.", listingOn: "Listing on {site}", noAddress: "No address",
+    removePhoto: "Delete this photo", confirmRemovePhoto: "Delete this photo?", deleteApt: "Delete apartment", confirmDelete: "Delete for sure?",
+    updated: "updated {d}", edit: "✎ Edit", done: "✓ Done",
+    uploading: "Uploading {i}/{n}…", uploadingAdd: "Uploading photos {i}/{n}…", saving: "Saving…",
+    photoFailed: "Photo not uploaded: {e}", notSaved: "Not saved: {e}", notDeleted: "Not deleted: {e}", notAdded: "Not added: {e}",
+    needAddress: "Enter at least an address or a listing link.", noConnection: "Can't reach the server: {e}",
+    wrongPassword: "Wrong password", wrongPasswordRelogin: "Wrong password – please log in again", errorStatus: "Error {s}",
+    noPassword: "⚠️ No password set: the server can't see the APP_PASSWORD variable, so anyone can edit. Check the variable in Netlify and redeploy.",
+    imgProcess: "could not be processed", imgRead: "could not read the image",
+    "err.wrong_password": "Wrong password", "err.need_address": "Address or link required", "err.not_found": "Not found",
+    "err.not_image": "That's not an image", "err.photo_too_big": "Photo is too large",
+  },
+};
+let lang = (() => { try { const l = localStorage.getItem("apt-lang"); return I18N[l] ? l : "ru"; } catch { return "ru"; } })();
+function t(key, params = {}) {
+  const s = I18N[lang][key] ?? I18N.ru[key] ?? key;
+  return s.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? "");
+}
+const locale = () => (LANGS.find(l => l.id === lang) || LANGS[0]).locale;
+// Статичні тексти розмітки: data-i18n (текст), data-i18n-ph (placeholder), data-i18n-aria (aria-label + title).
+function applyStaticI18n() {
+  document.documentElement.lang = lang;
+  document.title = t("docTitle");
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
+}
+
 const STATUSES = [
-  { id: "noted",      label: "На рассмотрении", color: "var(--status-noted)" },
-  { id: "contacted",  label: "Написали",        color: "var(--status-contacted)" },
-  { id: "called",     label: "Позвонили",       color: "var(--status-called)" },
-  { id: "responded",  label: "Есть ответ",      color: "var(--status-responded)" },
-  { id: "viewing",    label: "Договорились о просмотре", color: "var(--status-viewing)" },
-  { id: "viewed",     label: "Посмотрели",      color: "var(--status-viewed)" },
-  { id: "applied",    label: "Отправили формуляр", color: "var(--status-applied)" },
-  { id: "success",    label: "Сняли!",          color: "var(--status-success)" },
+  { id: "noted", get label() { return t("status.noted"); }, color: "var(--status-noted)" },
+  { id: "contacted", get label() { return t("status.contacted"); },        color: "var(--status-contacted)" },
+  { id: "called", get label() { return t("status.called"); },       color: "var(--status-called)" },
+  { id: "responded", get label() { return t("status.responded"); },      color: "var(--status-responded)" },
+  { id: "viewing", get label() { return t("status.viewing"); }, color: "var(--status-viewing)" },
+  { id: "viewed", get label() { return t("status.viewed"); },      color: "var(--status-viewed)" },
+  { id: "applied", get label() { return t("status.applied"); }, color: "var(--status-applied)" },
+  { id: "success", get label() { return t("status.success"); },          color: "var(--status-success)" },
 ];
 const statusMap = Object.fromEntries(STATUSES.map(s => [s.id, s]));
 const POLL_MS = 15000;
@@ -463,16 +610,23 @@ async function api(path, opts = {}) {
   if (password) headers["x-password"] = password;
   const res = await fetch(path, { ...opts, headers });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) { setEditMode(false); throw new Error("Неверный пароль — войдите снова"); }
-  if (!res.ok) throw new Error(data.error || `Ошибка ${res.status}`);
+  if (res.status === 401) { setEditMode(false); throw new Error(t("wrongPasswordRelogin")); }
+  if (!res.ok) throw new Error((data.code && I18N[lang]["err." + data.code]) || data.error || t("errorStatus", { s: res.status }));
   return data;
+}
+
+function updateModeTexts() {
+  const lockLabel = canEdit ? t("logout") : t("login");
+  $("#btnLock").innerHTML = `<span aria-hidden="true">${canEdit ? "🔓" : "🔒"}</span> <span class="lock-text">${lockLabel}</span>`;
+  $("#btnLock").setAttribute("aria-label", lockLabel);
+  $("#btnLock").title = lockLabel;
+  $("#subtitle").textContent = canEdit ? t("subtitleEdit") : t("subtitleView");
 }
 
 function setEditMode(on) {
   canEdit = on;
   app.classList.toggle("readonly", !on);
-  $("#btnLock").textContent = on ? "🔓 Выйти" : "🔒 Войти";
-  $("#subtitle").textContent = on ? "Общий список — режим редактирования" : "Общий список — только просмотр";
+  updateModeTexts();
   renderList();
 }
 
@@ -482,7 +636,7 @@ async function checkAuth() {
     if (!r.required) {
       $("#btnLock").style.display = "none";
       setEditMode(true);
-      showBanner("⚠️ Пароль не настроен: сервер не видит переменную APP_PASSWORD, поэтому редактировать может любой. Проверьте переменную в Netlify и сделайте новый деплой.", true);
+      showBanner(t("noPassword"), true);
       return;
     }
     $("#btnLock").style.visibility = "visible";
@@ -514,7 +668,7 @@ $("#loginPanel").addEventListener("submit", async (e) => {
     setEditMode(true);
   } else {
     password = "";
-    showBanner("Неверный пароль", true);
+    showBanner(t("wrongPassword"), true);
   }
 });
 
@@ -523,7 +677,7 @@ function renderFilters() {
   const counts = { all: active.length, approved: active.filter(a => a.approved).length, rejected: apartments.length - active.length };
   STATUSES.forEach(s => counts[s.id] = active.filter(a => a.status === s.id).length);
   // Порожні статуси не показуємо, щоб список був коротким (крім активного).
-  const chips = [{ id: "all", label: "Актуально", color: "var(--accent)" }, { id: "approved", label: "★ Подходят", color: "var(--star)" }, ...STATUSES, { id: "rejected", label: "✕ Отсеянные", color: "var(--text-muted)" }]
+  const chips = [{ id: "all", label: t("filterAll"), color: "var(--accent)" }, { id: "approved", label: t("filterApproved"), color: "var(--star)" }, ...STATUSES, { id: "rejected", label: t("filterRejected"), color: "var(--text-muted)" }]
     .filter(c => c.id === "all" || counts[c.id] || c.id === activeFilter);
   filtersEl.innerHTML = chips.map(c => `
     <button type="button" class="chip ${activeFilter === c.id ? "active" : ""}" data-filter="${c.id}" style="--c:${c.color}" aria-pressed="${activeFilter === c.id}">
@@ -553,33 +707,33 @@ function renderList() {
       : p.status === activeFilter;
   });
   if (!items.length) {
-    listEl.innerHTML = `<div class="empty">${apartments.length ? "В этой категории пусто." : "Пока пусто."}</div>`;
+    listEl.innerHTML = `<div class="empty">${apartments.length ? t("emptyFilter") : t("emptyAll")}</div>`;
     return;
   }
   listEl.innerHTML = items.map(a => {
     const st = statusMap[a.status] || statusMap.noted;
-    const updated = a.updatedAt ? new Date(a.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const updated = a.updatedAt ? new Date(a.updatedAt).toLocaleString(locale(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
     const link = safeUrl(a.link);
     const photos = photosOf(a);
     const idx = Math.min(galleryIndex.get(a.id) || 0, Math.max(photos.length - 1, 0));
     const ext =(inner, cls = "") => link ? `<a class="${cls}" href="${escapeHtml(link)}" target="_blank" rel="noopener">${inner}</a>` : inner;
     let site = "";
     try { site = link ? new URL(link, location.href).hostname.replace(/^(www|en|de|fr|it)\./, "") : ""; } catch {}
-    const addrText = escapeHtml(a.address) || (site ? "Объявление на " + escapeHtml(site) : "Без адреса");
+    const addrText = escapeHtml(a.address) || (site ? escapeHtml(t("listingOn", { site })) : t("noAddress"));
     return `
     <div class="card ${a.approved ? "approved" : ""} ${a.rejected ? "rejected" : ""} ${editingCards.has(a.id) ? "editing" : ""}" data-id="${escapeHtml(a.id)}">
       ${photos.length ? `
       <div class="gallery">
-        <img class="photo" src="${escapeHtml(photos[idx])}" alt="Открыть фото" loading="lazy" draggable="false" />
+        <img class="photo" src="${escapeHtml(photos[idx])}" alt="${t("openPhoto")}" loading="lazy" draggable="false" />
         ${photos.length > 1 ? `
-        <button type="button" class="nav prev" aria-label="Предыдущее фото"><span>‹</span></button>
-        <button type="button" class="nav next" aria-label="Следующее фото"><span>›</span></button>
+        <button type="button" class="nav prev" aria-label="${t("prevPhoto")}"><span>‹</span></button>
+        <button type="button" class="nav next" aria-label="${t("nextPhoto")}"><span>›</span></button>
         <div class="dots">${photos.map((_, i) => `<i class="${i === idx ? "on" : ""}"></i>`).join("")}</div>` : ""}
       </div>` : ""}
       <div class="card-top">
         <div>
           <div class="addr-row">
-            ${ext(`<span class="addr">${a.approved ? `<span class="star" title="Подходит" aria-label="Подходит">★</span>` : ""}${a.rejected ? `<span class="rejected-mark" title="Отсеяли" aria-label="Отсеяли">✕</span>` : ""}${addrText}</span>${link ? `<span class="ext" aria-hidden="true">↗</span>` : ""}`, "addr-link")}
+            ${ext(`<span class="addr">${a.approved ? `<span class="star" title="${t("fit")}" aria-label="${t("fit")}">★</span>` : ""}${a.rejected ? `<span class="rejected-mark" title="${t("rejectedMark")}" aria-label="${t("rejectedMark")}">✕</span>` : ""}${addrText}</span>${link ? `<span class="ext" aria-hidden="true">↗</span>` : ""}`, "addr-link")}
             ${a.price ? `<span class="price-tag">${escapeHtml(a.price)} CHF</span>` : ""}
           </div>
           ${site ? `<div class="meta-line">${escapeHtml(site)}</div>` : ""}
@@ -590,30 +744,30 @@ function renderList() {
       ${canEdit && editingCards.has(a.id) ? `
       <div class="edit-box">
         <div class="fields-box">
-          <input class="fieldInput field-address" data-field="address" value="${escapeHtml(a.address)}" placeholder="Адрес / название" aria-label="Адрес / название" autocomplete="off" />
-          <input class="fieldInput" data-field="link" value="${escapeHtml(a.link)}" placeholder="Ссылка на объявление" aria-label="Ссылка на объявление" autocomplete="off" inputmode="url" />
-          <input class="fieldInput" data-field="price" value="${escapeHtml(a.price)}" placeholder="Цена, CHF" aria-label="Цена, CHF" autocomplete="off" inputmode="numeric" />
+          <input class="fieldInput field-address" data-field="address" value="${escapeHtml(a.address)}" placeholder="${t("phAddress")}" aria-label="${t("phAddress")}" autocomplete="off" />
+          <input class="fieldInput" data-field="link" value="${escapeHtml(a.link)}" placeholder="${t("phLink")}" aria-label="${t("phLink")}" autocomplete="off" inputmode="url" />
+          <input class="fieldInput" data-field="price" value="${escapeHtml(a.price)}" placeholder="${t("phPriceShort")}" aria-label="${t("phPriceShort")}" autocomplete="off" inputmode="numeric" />
         </div>
         <div class="card-controls">
-          <select class="statusSelect" aria-label="Статус">
+          <select class="statusSelect" aria-label="${t("statusLabel")}">
             ${STATUSES.map(s => `<option value="${s.id}" ${s.id === a.status ? "selected" : ""}>${s.label}</option>`).join("")}
           </select>
-          <button class="btn-ghost rejectBtn ${a.rejected ? "on" : ""}" aria-pressed="${!!a.rejected}">${a.rejected ? "✕ Отсеяли" : "✕ Не подходит"}</button>
-          <button class="btn-ghost approveBtn ${a.approved ? "on" : ""}" aria-pressed="${!!a.approved}">${a.approved ? "★ Подходит" : "☆ Подходит"}</button>
-          <button class="btn-ghost photoBtn">📷 Добавить фото</button>
-          ${photos.length ? `<button class="btn-danger removePhotoBtn">Удалить это фото</button>` : ""}
+          <button class="btn-ghost rejectBtn ${a.rejected ? "on" : ""}" aria-pressed="${!!a.rejected}">${a.rejected ? t("rejectOn") : t("rejectOff")}</button>
+          <button class="btn-ghost approveBtn ${a.approved ? "on" : ""}" aria-pressed="${!!a.approved}">${a.approved ? t("approveOn") : t("approveOff")}</button>
+          <button class="btn-ghost photoBtn">${t("addPhoto")}</button>
+          ${photos.length ? `<button class="btn-danger removePhotoBtn">${t("removePhoto")}</button>` : ""}
           <input type="file" accept="image/*" multiple class="photoInput" style="display:none" />
         </div>
         <div class="notes-box">
-          <textarea class="notesInput" placeholder="Заметка / что ответили">${escapeHtml(a.notes)}</textarea>
+          <textarea class="notesInput" placeholder="${t("phNotes")}">${escapeHtml(a.notes)}</textarea>
         </div>
         <div class="edit-footer">
-          <button class="btn-danger deleteBtn">Удалить квартиру</button>
+          <button class="btn-danger deleteBtn">${t("deleteApt")}</button>
         </div>
       </div>` : ""}
       <div class="card-footer">
-        <span class="updated-at">${updated ? "обновлено " + updated : ""}</span>
-        <button type="button" class="btn-ghost btn-sm editToggle edit-only">${editingCards.has(a.id) ? "✓ Готово" : "✎ Изменить"}</button>
+        <span class="updated-at">${updated ? t("updated", { d: updated }) : ""}</span>
+        <button type="button" class="btn-ghost btn-sm editToggle edit-only">${editingCards.has(a.id) ? t("done") : t("edit")}</button>
       </div>
     </div>`;
   }).join("");
@@ -689,14 +843,14 @@ function bindCard(card) {
     if (!files.length) return;
     photoBtn.disabled = true;
     try {
-      const urls = await uploadPhotos(files, (i, n) => photoBtn.textContent = `Загрузка ${i}/${n}…`);
+      const urls = await uploadPhotos(files, (i, n) => photoBtn.textContent = t("uploading", { i, n }));
       const current = photosOf(apartments.find(a => a.id === id));
       galleryIndex.set(id, current.length); // показати перше з нових
       await updateApartment(id, { photos: [...current, ...urls] });
     } catch (e) {
-      showBanner("Фото не загрузилось: " + e.message, true);
+      showBanner(t("photoFailed", { e: e.message }), true);
       photoBtn.disabled = false;
-      photoBtn.textContent = "📷 Добавить фото";
+      photoBtn.textContent = t("addPhoto");
     }
   });
 
@@ -704,8 +858,8 @@ function bindCard(card) {
   if (removeBtn) removeBtn.addEventListener("click", () => {
     if (removeBtn.dataset.armed !== "1") {
       removeBtn.dataset.armed = "1";
-      removeBtn.textContent = "Точно удалить фото?";
-      setTimeout(() => { if (removeBtn.isConnected) { removeBtn.dataset.armed = "0"; removeBtn.textContent = "Удалить это фото"; } }, 3000);
+      removeBtn.textContent = t("confirmRemovePhoto");
+      setTimeout(() => { if (removeBtn.isConnected) { removeBtn.dataset.armed = "0"; removeBtn.textContent = t("removePhoto"); } }, 3000);
       return;
     }
     const current = photosOf(apartments.find(a => a.id === id));
@@ -717,8 +871,8 @@ function bindCard(card) {
   deleteBtn.addEventListener("click", () => {
     if (deleteBtn.dataset.armed === "1") return deleteApartment(id);
     deleteBtn.dataset.armed = "1";
-    deleteBtn.textContent = "Точно удалить?";
-    setTimeout(() => { if (deleteBtn.isConnected) { deleteBtn.dataset.armed = "0"; deleteBtn.textContent = "Удалить"; } }, 3000);
+    deleteBtn.textContent = t("confirmDelete");
+    setTimeout(() => { if (deleteBtn.isConnected) { deleteBtn.dataset.armed = "0"; deleteBtn.textContent = t("deleteApt"); } }, 3000);
   });
 }
 
@@ -798,7 +952,7 @@ function openLightbox(apt, i, onChange) {
   const many = lb.photos.length > 1;
   $("#lbPrev").hidden = $("#lbNext").hidden = !many;
   lb.thumbs.hidden = !many;
-  lb.thumbs.innerHTML = many ? lb.photos.map((src, k) => `<button type="button" data-k="${k}" aria-label="Фото ${k + 1}"><img src="${escapeHtml(src)}" alt="" loading="lazy" /></button>`).join("") : "";
+  lb.thumbs.innerHTML = many ? lb.photos.map((src, k) => `<button type="button" data-k="${k}" aria-label="${t("photoN", { n: k + 1 })}"><img src="${escapeHtml(src)}" alt="" loading="lazy" /></button>`).join("") : "";
   lb.thumbs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => lbShow(+b.dataset.k)));
   document.body.style.overflow = "hidden";
   lb.el.showModal();
@@ -839,9 +993,9 @@ function shrinkImage(file, max = 1600) {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(img.src);
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error("не удалось обработать")), "image/jpeg", 0.85);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error(t("imgProcess"))), "image/jpeg", 0.85);
     };
-    img.onerror = () => reject(new Error("не удалось прочитать изображение"));
+    img.onerror = () => reject(new Error(t("imgRead")));
     img.src = URL.createObjectURL(file);
   });
 }
@@ -860,7 +1014,7 @@ async function updateApartment(id, patch, rerender = true) {
     showBanner("");
     if (rerender) { renderFilters(); renderList(); }
   } catch (e) {
-    showBanner("Не сохранилось: " + e.message, true);
+    showBanner(t("notSaved", { e: e.message }), true);
     load();
   }
 }
@@ -870,7 +1024,7 @@ async function deleteApartment(id) {
     await api(`/api/apartments/${encodeURIComponent(id)}`, { method: "DELETE" });
     apartments = apartments.filter(a => a.id !== id);
     renderFilters(); renderList();
-  } catch (e) { showBanner("Не удалилось: " + e.message, true); }
+  } catch (e) { showBanner(t("notDeleted", { e: e.message }), true); }
 }
 
 let pendingPhotos = []; // файли, вибрані у формі додавання
@@ -879,14 +1033,15 @@ function renderPendingPhotos() {
   const box = $("#addThumbs");
   box.querySelectorAll("img").forEach(i => URL.revokeObjectURL(i.src));
   box.innerHTML = pendingPhotos.map((f, i) => `
-    <div class="thumb"><img src="${URL.createObjectURL(f)}" alt="" /><button type="button" data-i="${i}" aria-label="Убрать фото">×</button></div>`).join("");
+    <div class="thumb"><img src="${URL.createObjectURL(f)}" alt="" /><button type="button" data-i="${i}" aria-label="${t("removeThumb")}">×</button></div>`).join("");
   box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     pendingPhotos.splice(+b.dataset.i, 1);
     renderPendingPhotos();
   }));
-  $("#btnAddPhoto").textContent = pendingPhotos.length ? "📷 Ещё фото" : "📷 Добавить фото";
+  updateAddPhotoBtn();
   $("#inPhoto").value = "";
 }
+function updateAddPhotoBtn() { $("#btnAddPhoto").textContent = pendingPhotos.length ? t("morePhoto") : t("addPhoto"); }
 function showAddForm(on) {
   $("#addPanel").hidden = !on;
   $("#btnShowAdd").hidden = on;
@@ -908,14 +1063,14 @@ $("#btnAdd").addEventListener("click", async () => {
     price: $("#inPrice").value.trim(),
     notes: $("#inNotes").value.trim(),
   };
-  if (!body.address && !body.link) return showBanner("Укажите хотя бы адрес или ссылку на объявление.", true);
+  if (!body.address && !body.link) return showBanner(t("needAddress"), true);
   const btn = $("#btnAdd");
   btn.disabled = true;
   try {
     if (pendingPhotos.length) {
-      body.photos = await uploadPhotos(pendingPhotos, (i, n) => btn.textContent = `Загружаем фото ${i}/${n}…`);
+      body.photos = await uploadPhotos(pendingPhotos, (i, n) => btn.textContent = t("uploadingAdd", { i, n }));
     }
-    btn.textContent = "Сохраняем…";
+    btn.textContent = t("saving");
     const apt = await api("/api/apartments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     replaceLocal(apt);
     ["#inAddress", "#inLink", "#inPrice", "#inNotes"].forEach(s => $(s).value = "");
@@ -925,27 +1080,29 @@ $("#btnAdd").addEventListener("click", async () => {
     showBanner("");
     activeFilter = "all";
     renderFilters(); renderList();
-  } catch (e) { showBanner("Не добавилось: " + e.message, true); }
-  finally { btn.disabled = false; btn.textContent = "Добавить"; }
+  } catch (e) { showBanner(t("notAdded", { e: e.message }), true); }
+  finally { btn.disabled = false; btn.textContent = t("add"); }
 });
 
+let connectionLost = false;
 async function load() {
   try {
     const data = await api("/api/apartments");
     const changed = JSON.stringify(data) !== JSON.stringify(apartments);
     apartments = data;
     if (changed && !editingNotes) { renderFilters(); renderList(); }
-    if (bannerEl.textContent.startsWith("Нет связи")) showBanner("");
+    if (connectionLost) { connectionLost = false; showBanner(""); }
   } catch (e) {
-    showBanner("Нет связи с сервером: " + e.message, true);
+    connectionLost = true;
+    showBanner(t("noConnection", { e: e.message }), true);
   }
 }
 
 // Перемикач теми: як у системі → світла → темна → …
 const THEMES = [
-  { id: "auto",  icon: "🌓", label: "Тема: как в системе" },
-  { id: "light", icon: "☀️", label: "Тема: светлая" },
-  { id: "dark",  icon: "🌙", label: "Тема: тёмная" },
+  { id: "auto",  icon: "🌓", get label() { return t("themeAuto"); } },
+  { id: "light", icon: "☀️", get label() { return t("themeLight"); } },
+  { id: "dark",  icon: "🌙", get label() { return t("themeDark"); } },
 ];
 function applyTheme(id) {
   const t = THEMES.find(x => x.id === id) || THEMES[0];
@@ -961,6 +1118,23 @@ $("#btnTheme").addEventListener("click", () => {
   const cur = document.documentElement.dataset.theme || "auto";
   applyTheme(THEMES[(THEMES.findIndex(t => t.id === cur) + 1) % THEMES.length].id);
 });
+
+// Перемикач мови інтерфейсу; вибір запам'ятовується на цьому пристрої.
+const langSelect = $("#langSelect");
+langSelect.innerHTML = LANGS.map(l => `<option value="${l.id}" title="${l.name}">${l.label}</option>`).join("");
+function applyLang(id) {
+  lang = I18N[id] ? id : "ru";
+  langSelect.value = lang;
+  store.set("apt-lang", lang === "ru" ? null : lang);
+  applyStaticI18n();
+  updateModeTexts();
+  updateAddPhotoBtn();
+  applyTheme(document.documentElement.dataset.theme || "auto");
+  renderFilters();
+  if (apartments.length || listEl.querySelector(".card")) renderList();
+}
+langSelect.addEventListener("change", () => applyLang(langSelect.value));
+applyLang(lang);
 
 // Кнопка «наверх»: з'являється, коли прокрутили більше ніж на екран.
 const toTop = $("#toTop");

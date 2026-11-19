@@ -93,11 +93,11 @@ export default async (req) => {
     if (resource === "apartments") {
       if (method === "GET" && !id) return json(await listApartments(s));
 
-      if (!canWrite(req)) return json({ error: "Неверный пароль" }, 401);
+      if (!canWrite(req)) return json({ error: "Неверный пароль", code: "wrong_password" }, 401);
 
       if (method === "POST" && !id) {
         const body = clean(await req.json());
-        if (!body.address && !body.link) return json({ error: "Нужен адрес или ссылка" }, 400);
+        if (!body.address && !body.link) return json({ error: "Нужен адрес или ссылка", code: "need_address" }, 400);
         const now = Date.now();
         const apt = { address: "", link: "", price: "", notes: "", photos: [], status: "noted", ...body, id: newId(), createdAt: now, updatedAt: now };
         await s.setJSON(`apt/${apt.id}`, apt);
@@ -106,7 +106,7 @@ export default async (req) => {
 
       if (method === "PATCH" && id) {
         const current = normalize(await s.get(`apt/${id}`, { type: "json" }));
-        if (!current) return json({ error: "Не найдено" }, 404);
+        if (!current) return json({ error: "Не найдено", code: "not_found" }, 404);
         const updated = { ...current, ...clean(await req.json()), id, updatedAt: Date.now() };
         await s.setJSON(`apt/${id}`, updated);
         // Прибираємо з Blobs фото, які прибрали з квартири.
@@ -134,11 +134,11 @@ export default async (req) => {
         });
       }
       if (method === "POST" && !id) {
-        if (!canWrite(req)) return json({ error: "Неверный пароль" }, 401);
+        if (!canWrite(req)) return json({ error: "Неверный пароль", code: "wrong_password" }, 401);
         const contentType = req.headers.get("content-type") || "";
-        if (!contentType.startsWith("image/")) return json({ error: "Это не изображение" }, 400);
+        if (!contentType.startsWith("image/")) return json({ error: "Это не изображение", code: "not_image" }, 400);
         const buf = await req.arrayBuffer();
-        if (buf.byteLength > MAX_PHOTO_BYTES) return json({ error: "Фото слишком большое" }, 413);
+        if (buf.byteLength > MAX_PHOTO_BYTES) return json({ error: "Фото слишком большое", code: "photo_too_big" }, 413);
         const key = newId();
         await s.set(`photo/${key}`, buf, { metadata: { contentType } });
         return json({ url: `/api/photos/${key}` }, 201);
